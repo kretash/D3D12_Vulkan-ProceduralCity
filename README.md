@@ -1,6 +1,8 @@
 ### DirectX12 Procedural City ###
 ----
-<img src="http://gifyu.com/images/Untitled-256a26.gif" width=480>
+<img src="https://github.com/kretash/D3D12-ProceduralCity/blob/master/assets/demo.gif" width=480>
+
+![](assets/demo.gif "")
 
 ### Prerequisites ###
 
