@@ -18,6 +18,7 @@ $RECYCLE.BIN/
 *.lnk
 
 # =========================
+#
 # Operating System Files
 # =========================
 
@@ -45,3 +46,10 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# others
+
+.hg
+..hg
+.vs2015
+
