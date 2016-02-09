@@ -4,6 +4,10 @@
 
 This is the current state of my computing project. The goal of this project is to create a demo using D3D12 and hopefully Vulkan, learn how to use the APIs and optimize as much as I can. At the moment I just finished implementing the texture system and its painfully slow, that's what I will be working at the moment.
 
+The city is rendered with ExecuteIndirect, I store all geometries in a single buffer and have created a system that allows me to reserve and delete geometries from said buffer. All buildings, although similar are a unique instance generated based on a seed. Each building has a set of textures, diffuse, normal and specular generated with the same seed. The texture manger will load textures and decide their LOD. The biggest textures are 1024x510 and the smallest 128x64.
+
+Since I started this project in September I thought about porting it to Vulkan. I have never supported 2 different graphics APIs before, but I separated the C++ code and the D3D12 with intentions to have an easier job if I get the change to port it to Vulkan.
+
 ### Prerequisites ###
 ---
 - Windows 10
