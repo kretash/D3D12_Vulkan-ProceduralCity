@@ -27,10 +27,10 @@ public:
   void                    update( float df );
 
   int32_t                 get_render_bin_size() { return static_cast< int32_t >( m_render_bin.size() ); }
-  Drawable**              get_render_bin() { return &m_render_bin[0]; }
+  std::vector<Drawable*>* get_render_bin() { return &m_render_bin; }
 
   int32_t                 get_active_render_bin_size() { return static_cast< int32_t >( m_active_render_bin.size() ); }
-  Drawable**              get_active_render_bin() { return &m_active_render_bin[0]; }
+  std::vector<Drawable*>* get_active_render_bin() { return &m_active_render_bin; }
 
 private:
   bool                    _inside_frustum( float3 point, float r, float maxh );

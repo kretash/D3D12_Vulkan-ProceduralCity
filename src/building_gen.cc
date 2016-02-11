@@ -13,7 +13,10 @@ BuildingGen::BuildingGen() :
   a_id( 0 ),
   p_id( 0 ),
   n_elem_offset( 0 ),
-  m_radius( 0.0f ){
+  m_radius( 0.0f ),
+  m_vertex_length( 0 ),
+  m_vertex_buffer( nullptr ),
+  m_elem_buffer( nullptr ) {
 }
 
 void BuildingGen::generate( building_settings s ) {
@@ -147,21 +150,135 @@ void BuildingGen::generate( building_settings s ) {
 
   delete[] n_angles;
   delete[] n_side_size;
+
+}
+
+void BuildingGen::combine_buffers() {
+  // vertex
+
+  //horrible solution, but its not on the main thread so it shouldnt stall 
+  if( m_vertex_buffer != nullptr ) delete[] m_vertex_buffer;
+  if( m_elem_buffer != nullptr ) delete[] m_elem_buffer;
+
+  uint32_t num_vertices = static_cast< uint32_t >( n_vertices.size() );
+  num_vertices = num_vertices * static_cast< uint32_t >( 3 );
+
+  uint32_t num_normals = static_cast< uint32_t >( n_normals.size() );
+  num_normals = num_normals * static_cast< uint32_t >( 3 );
+
+  assert( num_vertices == num_normals && "WRONG GEOMETRY DATA" );
+  assert( num_vertices != 0 && "WRONG GEOMETRY DATA" );
+  assert( num_normals != 0 && "WRONG GEOMETRY DATA" );
+
+  std::vector<float3> nc_vertices;
+  std::vector<float3> nc_normals;
+  std::vector<float2> nc_uvs;
+  std::vector<float3> nc_tangent;
+  std::vector<float3> nc_bitangent;
+  std::vector<unsigned int> nc_elem;
+
+  for( int e = 0; e < n_elems.size(); ++e ) {
+
+    unsigned int v_i = n_elems[e];
+    nc_vertices.push_back( n_vertices[v_i] );
+    nc_normals.push_back( n_normals[v_i] );
+    nc_uvs.push_back( n_uvs[v_i] );
+    nc_elem.push_back( e );
+
+  }
+
+  for( int e = 0; e < nc_elem.size(); e += 3 ) {
+
+    float3& v1 = nc_vertices[e];
+    float3& v2 = nc_vertices[e + 1];
+    float3& v3 = nc_vertices[e + 2];
+
+    float2& uv1 = nc_uvs[e];
+    float2& uv2 = nc_uvs[e + 1];
+    float2& uv3 = nc_uvs[e + 2];
+
+    float3 delta_pos1 = v2 - v1;
+    float3 delta_pos2 = v3 - v1;
+
+    float2 delta_uv1 = uv2 - uv1;
+    float2 delta_uv2 = uv3 - uv1;
+
+    float r = 1.0f / ( delta_uv1.x * delta_uv2.y - delta_uv1.y * delta_uv2.x );
+    float3 tangent = ( delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y )*r;
+    float3 bitangent = ( delta_pos2 * delta_uv1.x - delta_pos1 * delta_uv2.x )*r;
+
+    //Tangent
+    nc_tangent.push_back( tangent );
+    nc_tangent.push_back( tangent );
+    nc_tangent.push_back( tangent );
+
+    //Bitangent
+    nc_bitangent.push_back( bitangent );
+    nc_bitangent.push_back( bitangent );
+    nc_bitangent.push_back( bitangent );
+
+  }
+
+  for( int e = 0; e < nc_tangent.size(); ++e ) {
+    float3& t = nc_tangent[e];
+    float3& b = nc_bitangent[e];
+    float3& n = nc_normals[e];
+
+    t = t - n * float3::dot( n, t );
+
+    if( float3::dot( float3::cross( n, t ), b ) < 0.0f )
+      t = t * -1.0f;
+  }
+
+  m_indicies_count = ( uint32_t ) nc_elem.size();
+  int stride = 14;
+  m_vertex_length = ( uint32_t ) ( nc_vertices.size() * stride );
+  m_vertex_buffer = new float[m_vertex_length];
+
+  int count = 0;
+  for( int i = 0; i < nc_vertices.size(); ++i ) {
+    m_vertex_buffer[count++] = nc_vertices[i].x;
+    m_vertex_buffer[count++] = nc_vertices[i].y;
+    m_vertex_buffer[count++] = nc_vertices[i].z;
+
+    m_vertex_buffer[count++] = nc_normals[i].x;
+    m_vertex_buffer[count++] = nc_normals[i].y;
+    m_vertex_buffer[count++] = nc_normals[i].z;
+
+    m_vertex_buffer[count++] = nc_uvs[i].x;
+    m_vertex_buffer[count++] = nc_uvs[i].y;
+
+    m_vertex_buffer[count++] = nc_tangent[i].x;
+    m_vertex_buffer[count++] = nc_tangent[i].y;
+    m_vertex_buffer[count++] = nc_tangent[i].z;
+
+    m_vertex_buffer[count++] = nc_bitangent[i].x;
+    m_vertex_buffer[count++] = nc_bitangent[i].y;
+    m_vertex_buffer[count++] = nc_bitangent[i].z;
+
+  }
+
+  // Indices's Buffer
+  m_elem_buffer = new uint32_t[m_indicies_count];
+  memcpy( m_elem_buffer, &nc_elem[0], sizeof( uint32_t )*m_indicies_count );
+
 }
 
 void BuildingGen::finish_and_upload() {
 
-  _copy_and_upload_buffers();
+  k_engine->get_GPU_pool()->queue_geometry( static_cast< Geometry* >( this ),
+    m_vertex_buffer, m_vertex_length, m_elem_buffer, m_indicies_count );
 
   n_vertices.clear();
   n_normals.clear();
   n_uvs.clear();
   n_elems.clear();
 
-  n_vertices.shrink_to_fit();
-  n_normals.shrink_to_fit();
-  n_uvs.shrink_to_fit();
-  n_elems.shrink_to_fit();
+  //avoiding the delete, vector will be reused anyway.
+  //n_vertices.shrink_to_fit();
+  //n_normals.shrink_to_fit();
+  //n_uvs.shrink_to_fit();
+  //n_elems.shrink_to_fit();
 
   n_elem_offset = 0;
   m_radius = 0.0f;
@@ -174,7 +291,7 @@ void BuildingGen::_generate_floor( uint32_t i_s, uint32_t i_f, bool top ) {
     uv = uv_y_max;
 
   n_vertices.push_back( c_pos - center_pos );
-  n_uvs.push_back( float2( uv_x_min, 1.0f-uv ));
+  n_uvs.push_back( float2( uv_x_min, 1.0f - uv ) );
   float3 A = c_pos;
 
   c_angle += n_angles[i_s];
@@ -349,119 +466,6 @@ void BuildingGen::_generate_sizes_5( float* sizes_array, uint32_t sides ) {
   }
 }
 
-void BuildingGen::_copy_and_upload_buffers() {
-  // vertex
-  uint32_t num_vertices = static_cast< uint32_t >( n_vertices.size() );
-  num_vertices = num_vertices * static_cast< uint32_t >( 3 );
-
-  uint32_t num_normals = static_cast< uint32_t >( n_normals.size() );
-  num_normals = num_normals * static_cast< uint32_t >( 3 );
-
-  assert( num_vertices == num_normals && "WRONG GEOMETRY DATA" );
-  assert( num_vertices != 0 && "WRONG GEOMETRY DATA" );
-  assert( num_normals != 0 && "WRONG GEOMETRY DATA" );
-  
-  std::vector<float3> nc_vertices;
-  std::vector<float3> nc_normals;
-  std::vector<float2> nc_uvs;
-  std::vector<float3> nc_tangent;
-  std::vector<float3> nc_bitangent;
-  std::vector<unsigned int> nc_elem;
-
-  for( int e = 0; e < n_elems.size(); ++e ) {
-
-    unsigned int v_i = n_elems[e];
-    nc_vertices.push_back( n_vertices[v_i] );
-    nc_normals.push_back( n_normals[v_i] );
-    nc_uvs.push_back( n_uvs[v_i] );
-    nc_elem.push_back( e );
-
-  }
-
-  for( int e = 0; e < nc_elem.size(); e += 3 ) {
-
-    float3& v1 = nc_vertices[e];
-    float3& v2 = nc_vertices[e + 1];
-    float3& v3 = nc_vertices[e + 2];
-
-    float2& uv1 = nc_uvs[e];
-    float2& uv2 = nc_uvs[e + 1];
-    float2& uv3 = nc_uvs[e + 2];
-
-    float3 delta_pos1 = v2 - v1;
-    float3 delta_pos2 = v3 - v1;
-
-    float2 delta_uv1 = uv2 - uv1;
-    float2 delta_uv2 = uv3 - uv1;
-
-    float r = 1.0f / ( delta_uv1.x * delta_uv2.y - delta_uv1.y * delta_uv2.x );
-    float3 tangent = ( delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y )*r;
-    float3 bitangent = ( delta_pos2 * delta_uv1.x - delta_pos1 * delta_uv2.x )*r;
-
-    //Tangent
-    nc_tangent.push_back( tangent );
-    nc_tangent.push_back( tangent );
-    nc_tangent.push_back( tangent );
-
-    //Bitangent
-    nc_bitangent.push_back( bitangent );
-    nc_bitangent.push_back( bitangent );
-    nc_bitangent.push_back( bitangent );
-
-  }
-
-  for( int e = 0; e < nc_tangent.size(); ++e ) {
-    float3& t = nc_tangent[e];
-    float3& b = nc_bitangent[e];
-    float3& n = nc_normals[e];
-
-    t = t - n * float3::dot( n, t );
-
-    if( float3::dot( float3::cross( n, t ), b ) < 0.0f )
-      t = t * -1.0f;
-  }
-
-  m_indicies_count = ( uint32_t ) nc_elem.size();
-  int stride = 14;
-  uint32_t array_lenght = ( uint32_t ) ( nc_vertices.size() * stride );
-  float* array_data = new float[array_lenght];
-
-  int count = 0;
-  for( int i = 0; i < nc_vertices.size(); ++i ) {
-    array_data[count++] = nc_vertices[i].x;
-    array_data[count++] = nc_vertices[i].y;
-    array_data[count++] = nc_vertices[i].z;
-
-    array_data[count++] = nc_normals[i].x;
-    array_data[count++] = nc_normals[i].y;
-    array_data[count++] = nc_normals[i].z;
-
-    array_data[count++] = nc_uvs[i].x;
-    array_data[count++] = nc_uvs[i].y;
-
-    array_data[count++] = nc_tangent[i].x;
-    array_data[count++] = nc_tangent[i].y;
-    array_data[count++] = nc_tangent[i].z;
-
-    array_data[count++] = nc_bitangent[i].x;
-    array_data[count++] = nc_bitangent[i].y;
-    array_data[count++] = nc_bitangent[i].z;
-
-  }
-
-
-  // Indicies Buffer
-  uint32_t* elem_data = new uint32_t[m_indicies_count];
-  memcpy( elem_data, &nc_elem[0], sizeof( uint32_t )*m_indicies_count );
-
-  k_engine->get_GPU_pool()->queue_geometry( static_cast< Geometry* >( this ),
-    array_data, array_lenght, elem_data, m_indicies_count );
-
-  //Queue should delete the data when uploaded.
-  //REason for CPU mem pool
-  //delete[] array_data;
-  //delete[] elem_data;
-}
 
 BuildingGen::~BuildingGen() {
 

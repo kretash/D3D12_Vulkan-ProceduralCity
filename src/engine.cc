@@ -81,10 +81,11 @@ void Engine::prepare() {
 }
 
 void Engine::update() {
+  k_engine_settings->start_frame();
 
   m_texture_manager->update();
-  m_input->update();
   m_gpu_pool->update();
+  m_input->update();//0.2-0.6
   m_camera->update();
   m_world->update();
 
@@ -99,14 +100,15 @@ void Engine::update() {
 }
 
 void Engine::reset_cmd_list() {
+  k_engine_settings->start_render();
   GPU::reset_render_command_list( &m_e_data, m_window.get() );
 }
 
-void Engine::clear_color(  ) {
+void Engine::clear_color() {
   GPU::clear_rtv( &m_e_data, m_window.get() );
 }
 
-void Engine::clear_depth(  ) {
+void Engine::clear_depth() {
   GPU::clear_dsv( &m_e_data, m_window.get() );
 }
 
@@ -114,8 +116,12 @@ void Engine::render_skydome( Skydome* s ) {
 
   Renderer* r = s->get_renderer();
 
-  GPU::populate_command_list( &m_e_data, r->get_render_data(), m_window.get(),
-    r->get_render_bin(), r->get_render_bin_size() );
+  GPU::populate_command_list(
+    &m_e_data,
+    r->get_render_data(),
+    m_window.get(),
+    &( *r->get_render_bin() )[0],
+    r->get_render_bin_size() );
 
 }
 
@@ -123,30 +129,41 @@ void Engine::render( Renderer* r ) {
 
   int32_t render_bin_size = r->get_render_bin_size();
 
-  m_texture_manager->synch();
-
   if( render_bin_size > 0 ) {
 
-    GPU::update_command_buffer( &m_e_data, r->get_render_data(),
-      r->get_render_bin(), render_bin_size );
+    GPU::update_command_buffer(
+      &m_e_data,
+      r->get_render_data(),
+      &( *r->get_render_bin() )[0],
+      render_bin_size );
 
-    GPU::populate_indirect_command_list( &m_e_data, r->get_render_data(), m_window.get(),
-      r->get_render_bin(), render_bin_size );
+    GPU::populate_indirect_command_list(
+      &m_e_data,
+      r->get_render_data(),
+      m_window.get(),
+      &( *r->get_render_bin() )[0],
+      render_bin_size );
 
   }
 }
 
 void Engine::render_post( Renderer* r ) {
 
-    GPU::post_render( &m_e_data, r->get_render_data(), m_window.get() );
+  GPU::post_render( &m_e_data, r->get_render_data(), m_window.get() );
 
 }
 
 void Engine::execute_and_swap( Renderer* r ) {
 
+  m_texture_manager->synch();
+  //k_start_print_timer( "Upload" );
+  m_gpu_pool->synch();
+  //k_end_print_timer( "Upload" );
+
   GPU::execute_command_lists( &m_e_data, r->get_render_data() );
   GPU::present_swap_chain( &m_e_data );
   GPU::wait_for_previous_frame( &m_e_data );
+  k_engine_settings->end_frame();
 
 }
 
@@ -158,9 +175,9 @@ bool Engine::is_running() {
   return m_is_running;
 }
 
-void Engine::shutdown(){
-    EngineSettings::shutdown();
-    Engine::delele_instance();
+void Engine::shutdown() {
+  EngineSettings::shutdown();
+  Engine::delele_instance();
 }
 
 // Engine System Getters

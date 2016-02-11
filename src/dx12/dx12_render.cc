@@ -90,6 +90,7 @@ namespace dx {
     void present_swap_chain( engine_data* d ) {
       HRESULT result = d->m_swap_chain->Present( 1, 0 );
       assert( result == S_OK && "PRESENTING THE SWAP CHAIN FAILED" );
+      d->m_frame_index = d->m_swap_chain->GetCurrentBackBufferIndex();
     }
 }
 

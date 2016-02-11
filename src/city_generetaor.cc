@@ -126,36 +126,36 @@ void CityGenerator::generate( std::shared_ptr<Renderer> ren ) {
   m_to_generate_lock.unlock();
 
   for( int32_t i = 0; i < m_grid; i++ ) {
-    m_outline_buildings.push_back(
+    m_outline_positions.push_back(
       building_details( float3( ( m_half_grid - i )*m_scale, 0.0f, ( m_half_grid + 1 )*m_scale ), kTOP ) );
   }
 
   for( int32_t e = 0; e < m_grid; e++ ) {
-    m_outline_buildings.push_back(
+    m_outline_positions.push_back(
       building_details( float3( ( m_half_grid + 1 )*m_scale, 0.0f, ( m_half_grid - e )*m_scale ), kLEFT ) );
   }
 
   for( int32_t i = 0; i < m_grid; i++ ) {
-    m_outline_buildings.push_back(
+    m_outline_positions.push_back(
       building_details( float3( ( m_half_grid - m_grid )*m_scale, 0.0f, ( m_half_grid - i )*m_scale ), kRIGHT ) );
   }
 
   for( int32_t i = 0; i < m_grid; i++ ) {
-    m_outline_buildings.push_back(
+    m_outline_positions.push_back(
       building_details( float3( ( m_half_grid - i )*m_scale, 0.0f, ( m_half_grid - m_grid )*m_scale ), kBOT ) );
   }
 
-  m_outline_buildings[0].carry = kLEFT;
-  m_outline_buildings[m_grid - 1].carry = kRIGHT;
+  m_outline_positions[0].carry = kLEFT;
+  m_outline_positions[m_grid - 1].carry = kRIGHT;
 
-  m_outline_buildings[m_grid].carry = kTOP;
-  m_outline_buildings[2 * m_grid - 1].carry = kBOT;
+  m_outline_positions[m_grid].carry = kTOP;
+  m_outline_positions[2 * m_grid - 1].carry = kBOT;
 
-  m_outline_buildings[2 * m_grid].carry = kTOP;
-  m_outline_buildings[3 * m_grid - 1].carry = kBOT;
+  m_outline_positions[2 * m_grid].carry = kTOP;
+  m_outline_positions[3 * m_grid - 1].carry = kBOT;
 
-  m_outline_buildings[3 * m_grid].carry = kLEFT;
-  m_outline_buildings[4 * m_grid - 1].carry = kRIGHT;
+  m_outline_positions[3 * m_grid].carry = kLEFT;
+  m_outline_positions[4 * m_grid - 1].carry = kRIGHT;
 
 }
 
@@ -165,18 +165,18 @@ void CityGenerator::update() {
 #ifdef _DEBUG
   uint32_t max_movements = 50;
 #else
-  uint32_t max_movements = 750;
+  uint32_t max_movements = 250;
 #endif
 
   static int count = 0;
 
-  if( m_move_operations.size() == 0 ) {
+  if( m_move_operations.size() == 0 && count == 1 ) { //0.1 -> 0.5, spikes to 1.7
     _prepare_vectors();
     _generate_move_buildings();
   }
 
 
-  if( count == 0 ) {
+  if( count == 0 ) { //0.01 norm and spikes to 0.13 max
     _apply_move_buildings( max_movements );
     k_engine->get_GPU_pool()->start_remove_thread();
   }
@@ -184,7 +184,6 @@ void CityGenerator::update() {
 
   if( count == 2 ) {
     if( m_to_upload_lock.try_lock() ) {
-
       bool locked = true;
 
       for( uint32_t i = 0; i < max_movements; ++i ) {
@@ -204,7 +203,6 @@ void CityGenerator::update() {
     }
   }
 
-  //std::cout << " -- upload " << std::fixed << k_engine_settings->get_time( "upload" )*100.0 << std::endl;
   ++count;
   count = count % 3;
 }
@@ -215,12 +213,15 @@ void CityGenerator::_prepare_vectors() {
   float3 camera( position.x, 0.0f, position.z );
 
   {
-    for( building_ite i = m_outline_buildings.begin(); i != m_outline_buildings.end(); ++i ) {
+    for( building_ite i = m_outline_positions.begin(); i != m_outline_positions.end(); ++i ) {
       float3 border( i->position.x, 0.0f, i->position.z );
       i->distance = float3::lenght( camera - border );
     }
-    std::sort( m_outline_buildings.begin(), m_outline_buildings.end() );
+    std::sort( m_outline_positions.begin(), m_outline_positions.end() );
   }
+
+  if( m_outline_positions[0].distance >= m_max_radius )
+    return;
 
   {
     for( building_ite i = m_all_buildings.begin(); i != m_all_buildings.end(); ++i ) {
@@ -234,17 +235,14 @@ void CityGenerator::_prepare_vectors() {
 
 void CityGenerator::_generate_move_buildings() {
 
-  if( m_outline_buildings[0].distance >= m_max_radius )
+  if( m_outline_positions[0].distance >= m_max_radius )
     return;
 
   int32_t  outline_count = 0;
   int32_t  building_moves = 0;
   int32_t  outline_moves = 0;
 
-  std::vector<building_details> move_outlines;
-  std::vector<building_details> move_buildings;
-
-  outline_type my_type = m_outline_buildings[0].type;
+  outline_type my_type = m_outline_positions[0].type;
 
   float3 my_building = {};
   float3 difference = {};
@@ -262,7 +260,7 @@ void CityGenerator::_generate_move_buildings() {
     difference = float3( ( m_scale ), 0.0f, 0.0f );
   }
 
-  for( building_ite i = m_outline_buildings.begin(); i != m_outline_buildings.end(); ++i ) {
+  for( building_ite i = m_outline_positions.begin(); i != m_outline_positions.end(); ++i ) {
 
     if( i->type == my_type ) {
 
@@ -301,7 +299,6 @@ void CityGenerator::_generate_move_buildings() {
     ++outline_count;
   }
   assert( ( 2 * building_moves ) == outline_moves && "SIZE DIFFERENCE" );
-
 }
 
 void CityGenerator::_apply_move_buildings( uint32_t count ) {
@@ -333,7 +330,7 @@ void CityGenerator::_apply_move_buildings( uint32_t count ) {
 
 void CityGenerator::_apply_carry_to_outline( building_details outline ) {
   if( outline.carry != 0 ) {
-    for( std::vector<building_details>::iterator all_outlines = m_outline_buildings.begin(); all_outlines != m_outline_buildings.end(); ++all_outlines ) {
+    for( std::vector<building_details>::iterator all_outlines = m_outline_positions.begin(); all_outlines != m_outline_positions.end(); ++all_outlines ) {
       if( all_outlines->type == outline.carry ) {
 
 

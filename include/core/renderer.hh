@@ -31,7 +31,7 @@ public:
   void                            create( render_type t );
   void                            add_child( Drawable* d );
 
-  Drawable**                      get_render_bin() { return m_render_manager->get_active_render_bin(); }
+  std::vector<Drawable*>*         get_render_bin() { return m_render_manager->get_active_render_bin(); }
   int                             get_render_bin_size() { return m_render_manager->get_active_render_bin_size(); }
   bin_offsets*                    get_bin_offsets() { return m_bin_offsets; }
   renderer_data*                  get_render_data() { return &r_data; }

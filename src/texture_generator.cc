@@ -224,7 +224,7 @@ void TextureGenerator::_generate_elements( Texture* desc ) {
 
       curr.start = int2( counter, 0 );
       curr.end = int2( counter + thickness, 0 + height );
-      if( i == ( vertical - 1 ) ){
+      if( i == ( vertical - 1 ) ) {
         curr.end.x = width;
       }
       curr.color = border_color;
@@ -374,15 +374,18 @@ void TextureGenerator::_rasterize_diffuse_rocks( Texture* desc ) {
       float xx = fx / ( float ) ( width );
       float yy = fy / ( float ) ( height );
 
-      float n1 = PerlinNoise::noise( xx, yy, desc->m_seed_y );
+      float n1 = PerlinNoise::noise( xx, yy, desc->m_seed_y + 1.0f );
+      float n2 = PerlinNoise::noise( xx, yy, desc->m_seed_y + 2.0f );
+      float n3 = PerlinNoise::noise( xx, yy, desc->m_seed_y + 3.0f );
 
       texel e = get_wall_color( n1, n1, n1 );
+      e.set_grayscale( e.r );
 
       ( ( int32_t* ) desc->get_texture_pointer( tDIFFUSE ) )[center] = e.get_texel();
 
       // mmmmm....
-      ( ( int32_t* ) desc->get_texture_pointer( tSPECULAR ) )[center] = 
-        ( uint8_t ) ( luminance( texel::texel_to_float3(e.get_texel()) ) * 255 );
+      ( ( int32_t* ) desc->get_texture_pointer( tSPECULAR ) )[center] =
+        ( uint8_t ) ( luminance( texel::texel_to_float3( e.get_texel() ) ) * 255 );
     }
   }
 }

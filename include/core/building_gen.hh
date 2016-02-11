@@ -26,11 +26,10 @@ public:
 
   void                    generate( building_settings s );
   float                   get_radius() { return m_radius; }
+  void                    combine_buffers();
   void                    finish_and_upload();
 
 private:
-  void                    _copy_and_upload_buffers();
-
   void                    _generate_floor( uint32_t i_s, uint32_t i_f, bool top );
   void                    _generate_bot_face();
   void                    _generate_top_face();
@@ -63,6 +62,10 @@ private:
   std::vector<float2>     n_uvs;
   std::vector<uint32_t>   n_elems;
   uint32_t                n_elem_offset;
+
+  uint32_t                m_vertex_length;
+  float*                  m_vertex_buffer;
+  uint32_t*               m_elem_buffer;
 
   uint32_t                n_sides;
   uint32_t                n_floors;

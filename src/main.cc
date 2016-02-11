@@ -41,7 +41,7 @@ int main( int argc, char **argv ) {
 
   std::shared_ptr<Renderer> post = std::make_shared<Renderer>();
   post->create( rPOST );
-  
+
   std::shared_ptr<CityGenerator> c_gen = std::make_shared<CityGenerator>();
   c_gen->generate( ren );
 
@@ -78,8 +78,6 @@ int main( int argc, char **argv ) {
   EngineSettings* es = k_engine_settings;
 
   while( k_engine->is_running() ) {
-    es->start_frame();
-
 #if TEST_OBJ
     tea->rotate( 0.0f, rotation, 0.0f );
     rotation += 0.01f;
@@ -88,21 +86,15 @@ int main( int argc, char **argv ) {
     k_engine->update();
     ren->update();
     sky->update();
-    c_gen->update();
-
-    es->start_render();
+    c_gen->update(); // 0.0-0.1 spike 1.0 - 1.5
 
     k_engine->reset_cmd_list();
     k_engine->clear_color();
     k_engine->clear_depth();
-
     k_engine->render_skydome( sky.get() );
     k_engine->render( ren.get() );
     k_engine->render_post( post.get() );
-
     k_engine->execute_and_swap( ren.get() );
-
-    es->end_frame();
   }
 
   return 0;

@@ -48,6 +48,10 @@ void Building::prepare( float seed_x, float seed_y ) {
 
 void Building::generate() {
   _generate_classic_building();
+
+  m_building_generator_LOD0->combine_buffers();
+  m_building_generator_LOD1->combine_buffers();
+  m_building_generator_LOD2->combine_buffers();
 }
 
 void Building::upload_and_clean() {
@@ -73,6 +77,7 @@ void Building::generate_placeholder() {
   bs.init_r( eSingle, 0, 0, 13.0f, m_main_texture_set );
   m_building_generator_LOD0->generate( bs );
 
+  m_building_generator_LOD0->combine_buffers();
   m_building_generator_LOD0->finish_and_upload();
 
   m_geometry[0] = nullptr;
@@ -161,7 +166,7 @@ void Building::_generate_classic_building() {
     //Spacers
     for( int e = 0; e < current_floors; ++e ) {
       bs.init_s( m_num_sides, 1, 0.3f, float3( 0.0f, e * 3.0f + current_height, 0.0f ) );
-      bs.init_r( m_iteration_group, m_angle_s[i + 1], side_s, d*( m_base_size + m_spacers_size ), m_roof_texture_set );  
+      bs.init_r( m_iteration_group, m_angle_s[i + 1], side_s, d*( m_base_size + m_spacers_size ), m_roof_texture_set );
       m_building_generator_LOD0->generate( bs );
     }
     bs.n_vertical_uv = 1.0f;
@@ -230,8 +235,8 @@ void Building::_generate_classic_building() {
   m_building_generator_LOD0->generate( bs );
 
   current_height += 0.3f;
-  m_max_height = current_height+10.0f;
-  m_radius = m_building_generator_LOD0->get_radius();
+  m_max_height = ( current_height + 10.0f )*1.2f;
+  m_radius = m_building_generator_LOD0->get_radius() * 1.2f;
 
   current_height = 0.0f;
 

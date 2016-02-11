@@ -12,7 +12,7 @@ void RenderManager::add_child( Drawable* d ) {
 }
 
 void RenderManager::update( float df ) {
-
+  
   Camera* c = k_engine->get_camera();
   float3 c_pos = c->get_position();
   _generate_frustum_planes();
@@ -21,18 +21,18 @@ void RenderManager::update( float df ) {
   m_active_render_bin.clear();
 
   for( int32_t i = 0; i < m_render_bin.size(); ++i ) {
-    m_render_bin[i]->update();
+
     float3 pos = m_render_bin[i]->get_position();
 
     if( 0.0f < m_render_bin[i]->get_radius() ) {
 
-      float maxh = m_render_bin[i]->get_max_height() * 1.2f;
+      float maxh = m_render_bin[i]->get_max_height();
 
       float3 v_lenght = c_pos - pos;
       float length = float3::lenght( v_lenght );
       m_render_bin[i]->set_distance( length );
 
-      if( _inside_frustum( pos, m_render_bin[i]->get_radius() * 1.2f, maxh ) ) {
+      if( _inside_frustum( pos, m_render_bin[i]->get_radius(), maxh ) ) {
 
         m_active_render_bin.push_back( m_render_bin[i] );
 
@@ -67,12 +67,6 @@ void RenderManager::update( float df ) {
       m_render_bin[i]->set_active( true );
     }
   }
-
-  auto comp = [] ( Drawable* a, Drawable* b ) {
-    return a->get_distance() < b->get_distance();
-  };
-
-  std::sort( m_active_render_bin.begin(), m_active_render_bin.end(), comp );
 
 }
 

@@ -32,7 +32,6 @@ TextureManager::TextureManager() {
   for( int i = 0; i < MAX_TEXTURES; ++i )
     m_free_ids.push_back( i );
 
-  m_done.store(true);
 }
 
 void TextureManager::link_drawable( Drawable* d ) {
@@ -126,6 +125,10 @@ void TextureManager::prepare() {
   m_placeholder_texture->delete_texture( tDIFFUSE );
   m_placeholder_texture->delete_texture( tNORMAL );
   m_placeholder_texture->delete_texture( tSPECULAR );
+
+  m_exit_thread.store( false );
+  m_upload_textures.store( false );
+  m_threads.push_back( std::thread( &TextureManager::_upload_generated_textures, this ) );
 }
 
 void TextureManager::_generate_placeholder_texture() {
@@ -148,7 +151,6 @@ void TextureManager::_generate_placeholder_texture() {
 }
 
 void TextureManager::update() { //1.2562
-  
   static bool update_current_textures = false;
   update_current_textures = !update_current_textures;
 
@@ -164,8 +166,7 @@ void TextureManager::update() { //1.2562
   m_clean_up_textures.clear();
 
   if( !update_current_textures ) {
-    m_threads.push_back( std::thread( &TextureManager::_upload_generated_textures, this ) );
-    //_upload_generated_textures(); //1.226
+    m_upload_textures.store( true );
   } else {
 
     _sort_vectors(); // 0.01998
@@ -182,58 +183,65 @@ void TextureManager::update() { //1.2562
 }
 
 void TextureManager::synch() {
-  for( int i = 0; i < m_threads.size(); ++i ) {
-    m_threads[i].join();
+  if( m_upload_textures.load() == true ) {
+    //std::cout << "Waiting for textures.\n";
+    while( m_upload_textures.load() ) { /*wait*/ }
   }
-  m_threads.clear();
 }
 
 void TextureManager::_upload_generated_textures() {
-  m_done.store( false );
-  if( m_loading_textures.size() != 0 ) {
+  while( !m_exit_thread.load() ) {
 
-    bool needs_execute = false;
-    for( auto i = m_loading_textures.begin(); i != m_loading_textures.end(); ++i ) {
-      if( m_texture_generator->texture_ready( ( *i._Ptr )->get_texture() ) ) {
-        needs_execute = true;
-        break;
-      }
-    }
+    if( m_upload_textures.load() ) {
+      if( m_loading_textures.size() != 0 ) {
 
-    if( needs_execute ) {
-
-      int32_t uploaded = 0;
-
-      GPU::reset_texture_command_list( k_engine->get_engine_data() );
-
-      {
-        auto i = m_loading_textures.begin();
-        while( i != m_loading_textures.end() ) {
-
+        bool needs_execute = false;
+        for( auto i = m_loading_textures.begin(); i != m_loading_textures.end(); ++i ) {
           if( m_texture_generator->texture_ready( ( *i._Ptr )->get_texture() ) ) {
-
-            m_texture_generator->gather_texture( ( *i._Ptr )->get_texture() );
-
-            m_textured_drawables.push_back( *i._Ptr );
-            m_clean_up_textures.push_back( ( *i._Ptr )->get_texture() );
-
-            i = m_loading_textures.erase( i );
-            uploaded++;
-
-          } else {
-            ++i;
+            needs_execute = true;
+            break;
           }
-
-          if( m_loading_textures.size() == 0 ) break;
-          if( uploaded == MAX_UPLOAD_TEXTURES ) break;
         }
 
-        GPU::compute_texture_upload( k_engine->get_engine_data() );
-        GPU::wait_for_texture_upload( k_engine->get_engine_data() );
+        if( needs_execute ) {
+
+          int32_t uploaded = 0;
+
+          GPU::reset_texture_command_list( k_engine->get_engine_data() );
+
+          {
+            auto i = m_loading_textures.begin();
+            while( i != m_loading_textures.end() ) {
+
+              if( m_texture_generator->texture_ready( ( *i._Ptr )->get_texture() ) ) {
+
+                m_texture_generator->gather_texture( ( *i._Ptr )->get_texture() );
+
+                m_textured_drawables.push_back( *i._Ptr );
+                m_clean_up_textures.push_back( ( *i._Ptr )->get_texture() );
+
+                i = m_loading_textures.erase( i );
+                uploaded++;
+
+              } else {
+                ++i;
+              }
+
+              if( m_loading_textures.size() == 0 ) break;
+              if( uploaded == MAX_UPLOAD_TEXTURES ) break;
+            }
+
+            GPU::compute_texture_upload( k_engine->get_engine_data() );
+            GPU::wait_for_texture_upload( k_engine->get_engine_data() );
+          }
+        }
       }
+      m_upload_textures.store( false );
+    } else {
+      std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
     }
+
   }
-  m_done.store( true );
 }
 
 void TextureManager::_sort_vectors() {
@@ -308,7 +316,7 @@ void TextureManager::_look_for_upgrade_textures() {
   int32_t upgraded = 0;
   if( m_textured_drawables.size() == 0 ) return;
 
-  for( int32_t i = static_cast<int32_t>(m_textured_drawables.size()) - 1; i >= 0; --i ) {
+  for( int32_t i = static_cast< int32_t >( m_textured_drawables.size() ) - 1; i >= 0; --i ) {
 
     Texture* c_t = m_textured_drawables[i]->get_texture();
     int32_t LOD = c_t->get_LOD();
@@ -380,4 +388,6 @@ void TextureManager::shutdown() {
 }
 
 TextureManager::~TextureManager() {
+  m_exit_thread.store( true );
+  m_threads[0].join();
 }

@@ -298,8 +298,6 @@ namespace dx {
       assert( result == S_OK && "SET EVENT ON COMPLETITION FAILED" );
       WaitForSingleObject( d->m_fence_event, INFINITE );
     }
-
-    d->m_frame_index = d->m_swap_chain->GetCurrentBackBufferIndex();
   }
 }
 

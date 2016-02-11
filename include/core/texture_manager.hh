@@ -36,7 +36,6 @@ public:
   void                                    prepare();
   void                                    update();
   void                                    shutdown();
-
   void                                    synch();
 
 protected:
@@ -51,7 +50,8 @@ private:
   int32_t                                 _get_new_id();
 
   std::vector<std::thread>                m_threads;
-  std::atomic_bool                        m_done;
+  std::atomic_bool                        m_upload_textures;
+  std::atomic_bool                        m_exit_thread;
 
   std::shared_ptr<Texture>                m_placeholder_texture;
   std::vector<int32_t>                    m_free_ids;

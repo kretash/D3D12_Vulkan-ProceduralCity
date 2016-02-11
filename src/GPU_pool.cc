@@ -19,6 +19,7 @@ GPU_pool::GPU_pool() :
   m_placeholder_building( nullptr ) {
 
   m_removing_geometry.store( false );
+  m_remove_thread_working.store( true );
   g_data = std::make_shared<geometry_data>();
   m_remove_threads.resize( 1 );
 
@@ -52,6 +53,8 @@ void GPU_pool::init() {
 
   m_V_free_memory.push_back( mem_block( sizeof( quad ), m_max_vertex_buffer ) );
   m_I_free_memory.push_back( mem_block( 0, m_max_index_buffer ) );
+
+  m_remove_threads[0] = std::thread( &GPU_pool::_thread, this );
 }
 
 void GPU_pool::set_placeholder_building( Geometry* b ) {
@@ -60,29 +63,29 @@ void GPU_pool::set_placeholder_building( Geometry* b ) {
 
 void GPU_pool::queue_geometry( Geometry* b, float* v_data, uint32_t v_count, uint32_t* e_data, uint32_t e_count ) {
   if( m_removing_geometry.load() == true ) {
-    std::cout << "thread sync failed.\n";
-    m_remove_threads[0].join();
+    std::cout << "queue thread sync failed.\n";
+    while( m_removing_geometry.load() ) { /*wait*/ }
   }
 
   _save( b, v_data, v_count, e_data, e_count );
 }
 
-//0.1188
 void GPU_pool::update() {
 
-  GPU::upload_queue_into_vertex_buffer( g_data.get(), &m_upload_queue );
-  GPU::upload_queue_into_index_buffer( g_data.get(), &m_upload_queue );
-
-  //0.06
-  while( m_upload_queue.size() != 0 ) {
-
-    queue delete_me = m_upload_queue[0];
-    m_upload_queue.erase( m_upload_queue.begin() );
-
-    delete[] delete_me.v_data;
-    delete[] delete_me.i_data;
+  if( m_upload_queue.size() != 0 ) {
+    m_uploading_geometry.store( true );
   }
 
+}
+
+
+void GPU_pool::synch() {
+
+  if( m_uploading_geometry.load() == true ) {
+    //It going to happen often, best solution that I have at the moment
+    //std::cout << "upload thread sync failed.\n";
+    while( m_uploading_geometry.load() ) { /*wait*/ }
+  }
 }
 
 void GPU_pool::_save( Geometry* b, float* v_data, uint32_t v_count, uint32_t* e_data, uint32_t e_count ) {
@@ -137,7 +140,9 @@ void GPU_pool::_save( Geometry* b, float* v_data, uint32_t v_count, uint32_t* e_
   ++m_instances;
 
   //push to the queue
+  m_queue_mutex.lock();
   m_upload_queue.push_back( queue( v_mem, v_data, i_mem, e_data ) );
+  m_queue_mutex.unlock();
 }
 
 void GPU_pool::remove( Geometry* b ) {
@@ -145,7 +150,6 @@ void GPU_pool::remove( Geometry* b ) {
   assert( b->get_vertex_offset() != m_placeholder_building->get_vertex_offset() ||
     b->get_indicies_offset() != m_placeholder_building->get_indicies_offset()
     && "BUILDING ALREADY DELETED" );
-
 
   m_pool_mutex.lock();
 
@@ -250,29 +254,49 @@ void GPU_pool::_defrag_vectors() {
 }
 
 void GPU_pool::start_remove_thread() {
-  if( m_remove_threads[0].get_id() != std::thread::id() )
-    m_remove_threads[0].join();
-
-  m_remove_threads[0] = std::thread( &GPU_pool::_remove_thread, this );
+  m_removing_geometry.store( true );
 }
 
-void GPU_pool::_remove_thread() {
-  m_removing_geometry.store( true );
-  m_pool_mutex.lock();
+void GPU_pool::_thread() {
+  while( m_remove_thread_working.load() ) {
+    if( m_uploading_geometry.load() ) {
 
-  while( m_remove_queue.size() != 0 ) {
 
-    remove_queue remove_me = m_remove_queue[0];
-    m_remove_queue.erase( m_remove_queue.begin() );
+      m_queue_mutex.lock();
 
-    _remove( remove_me );
+      GPU::upload_queue_into_vertex_buffer( g_data.get(), &m_upload_queue );
+      GPU::upload_queue_into_index_buffer( g_data.get(), &m_upload_queue );
+      m_upload_queue.clear();
 
+      m_queue_mutex.unlock();
+
+      m_uploading_geometry.store( false );
+
+
+    } else if( m_removing_geometry.load() ) {
+
+
+      m_pool_mutex.lock();
+
+      while( m_remove_queue.size() != 0 ) {
+
+        remove_queue remove_me = m_remove_queue[0];
+        m_remove_queue.erase( m_remove_queue.begin() );
+
+        _remove( remove_me );
+
+      }
+
+      _defrag_vectors();
+
+      m_pool_mutex.unlock();
+      m_removing_geometry.store( false );
+
+
+    } else {
+      std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+    }
   }
-
-  _defrag_vectors();
-
-  m_pool_mutex.unlock();
-  m_removing_geometry.store( false );
 }
 
 void GPU_pool::_debug_log() {
@@ -300,6 +324,7 @@ void GPU_pool::_debug_log() {
 }
 
 GPU_pool::~GPU_pool() {
+  m_remove_thread_working.store( false );
 
   for( int i = 0; i < m_remove_threads.size(); ++i ) {
     m_remove_threads[i].join();

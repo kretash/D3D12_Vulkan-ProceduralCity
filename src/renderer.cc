@@ -9,6 +9,7 @@
 #include "core/world.hh"
 #include "core/texture_manager.hh"
 #include <cassert>
+#include <algorithm>
 
 Renderer::Renderer() {
   m_render_bin_objects = 0;
@@ -20,7 +21,7 @@ void Renderer::create( render_type t ) {
 
   m_render_type = t;
   k_engine->set_renderer( this );
-  
+
   if( m_render_type == rBASIC || m_render_type == rSKYDOME || m_render_type == rTEXTURE ) {
     GPU::create_root_signature( &r_data );
     GPU::load_and_compile_shaders( &r_data, m_render_type );
@@ -47,7 +48,7 @@ void Renderer::add_child( Drawable* d ) {
 void Renderer::prepare() {
 
   if( m_render_type != rPOST ) {
-    Drawable** rb = m_render_manager->get_render_bin();
+    std::vector<Drawable*>* rb = m_render_manager->get_render_bin();
 
     m_instance_buffer.resize( k_engine->get_total_drawables() );
     Camera* c = k_engine->get_camera();
@@ -62,20 +63,20 @@ void Renderer::prepare() {
 
     for( int32_t i = 0; i < m_render_bin_objects; ++i ) {
 
-      int32_t id = rb[i]->get_drawable_id();
+      int32_t id = ( *rb )[i]->get_drawable_id();
 
-      m_instance_buffer[id].mvp = rb[i]->get_model() * view * proj;
-      m_instance_buffer[id].normal_matrix = float4x4::inverse( rb[i]->get_model() );
+      m_instance_buffer[id].mvp = ( *rb )[i]->get_model() * view * proj;
+      m_instance_buffer[id].normal_matrix = float4x4::inverse( ( *rb )[i]->get_model() );
 
-      m_instance_buffer[id].d_texture_id = rb[i]->get_texture()->get_id( tDIFFUSE );
-      m_instance_buffer[id].n_texture_id = rb[i]->get_texture()->get_id( tNORMAL );
-      m_instance_buffer[id].s_texture_id = rb[i]->get_texture()->get_id( tSPECULAR );
+      m_instance_buffer[id].d_texture_id = ( *rb )[i]->get_texture()->get_id( tDIFFUSE );
+      m_instance_buffer[id].n_texture_id = ( *rb )[i]->get_texture()->get_id( tNORMAL );
+      m_instance_buffer[id].s_texture_id = ( *rb )[i]->get_texture()->get_id( tSPECULAR );
     }
 
     GPU::create_command_signature( k_engine->get_engine_data(), &r_data );
 
     if( m_render_type != rSKYDOME )
-      GPU::create_and_fill_command_buffer( k_engine->get_engine_data(), &r_data, rb, m_render_bin_objects );
+      GPU::create_and_fill_command_buffer( k_engine->get_engine_data(), &r_data, &( *rb )[0], m_render_bin_objects );
   } else {
 
   }
@@ -86,29 +87,35 @@ void Renderer::update() {
 
     m_render_manager->update( 0.016f );
 
-    Drawable** rb = m_render_manager->get_render_bin();
+    std::vector<Drawable*>* rb = m_render_manager->get_active_render_bin();
     Camera* c = k_engine->get_camera();
     float4x4 view = c->get_view();
     float4x4 proj = c->get_projection();
 
-    for( int32_t i = 0; i < m_render_bin_objects; ++i ) {
-      int32_t id = rb[i]->get_drawable_id();
 
-      rb[i]->update();
-      m_instance_buffer[id].mvp = rb[i]->get_model() * view * proj;
+    auto comp = [] ( Drawable* a, Drawable* b ) {
+      return a->get_drawable_id() < b->get_drawable_id();
+    };
+
+    //Quicker to sort the rb to remove cache misses
+    std::sort( rb->begin(), rb->end(), comp );
+
+    for( int32_t i = 0; i < rb->size(); ++i ) {
+      int32_t id = ( *rb )[i]->get_drawable_id();
+
+      float4x4 model = ( *rb )[i]->get_model();
+      m_instance_buffer[id].mvp = model * view * proj;
       m_instance_buffer[id].mvp.transpose();
 
-      m_instance_buffer[id].model = rb[i]->get_model();
-      m_instance_buffer[id].normal_matrix = float4x4::inverse( rb[i]->get_model() );
+      m_instance_buffer[id].model = model;
+      m_instance_buffer[id].normal_matrix = float4x4::inverse( model );
 
-      m_instance_buffer[id].d_texture_id = rb[i]->get_texture()->get_id( tDIFFUSE );
-      m_instance_buffer[id].n_texture_id = rb[i]->get_texture()->get_id( tNORMAL );
-      m_instance_buffer[id].s_texture_id = rb[i]->get_texture()->get_id( tSPECULAR );
+      m_instance_buffer[id].d_texture_id = ( *rb )[i]->get_texture()->get_id( tDIFFUSE );
+      m_instance_buffer[id].n_texture_id = ( *rb )[i]->get_texture()->get_id( tNORMAL );
+      m_instance_buffer[id].s_texture_id = ( *rb )[i]->get_texture()->get_id( tSPECULAR );
     }
 
-    GPU::update_instance_buffer_object( &r_data, &m_instance_buffer[0] );
-  } else {
-
+    GPU::update_instance_buffer_object( &r_data, &m_instance_buffer[0] );//~0.5ms
   }
 }
 

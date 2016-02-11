@@ -41,7 +41,6 @@ private:
 
   void                                        _prepare_vectors();
   void                                        _generate_move_buildings();
-  void                                        _generate_move_buildings2();
   void                                        _apply_move_buildings( uint32_t count );
 
   void                                        _apply_carry_to_outline( building_details outline );
@@ -72,6 +71,6 @@ private:
 
   std::map<int32_t, float3>                   m_building_positions;
   std::vector<building_details>               m_all_buildings;
-  std::vector<building_details>               m_outline_buildings;
+  std::vector<building_details>               m_outline_positions;
   std::vector<move_operation>                 m_move_operations;
 };

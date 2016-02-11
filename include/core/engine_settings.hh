@@ -15,23 +15,49 @@ http://opensource.org/licenses/MIT
 */
 
 #pragma once
-#include <Windows.h>
 #include <string>
+#include <chrono>
 #include "types.hh"
 
 #define MAX_TIMERS 16
-#define FPS_SMOOTH 10
 #define k_engine_settings (EngineSettings::get_instance())
 
 #define k_start_count_timer( str ) k_engine_settings->start_timer( str );
 
-#define k_end_count_timer( str )  static double all_times = 0.0f; \
+#define k_end_count_timer( str )  {static double all_times = 0.0f; \
                                   static int32_t samples = 0; \
                                   if( samples > 200 && samples < 300 )  \
                                     all_times += k_engine_settings->get_time( str );\
                                   else if( samples > 300 ) \
-                                    std::cout << "----------------------------------------  " << all_times << std::endl; \
-                                  ++samples; 
+                                    std::cout << str << "count --------------------------------  " << all_times << std::endl; \
+                                  ++samples; }
+
+#define k_start_min_timer( str ) k_engine_settings->start_timer( str );
+
+#define k_end_min_timer( str )  {static double min_time = 100000.0f; \
+                                  static int32_t samples = 0; \
+                                  if( samples > 200 && samples < 300 ){  \
+                                    double time = k_engine_settings->get_time( str );\
+                                    if( time < min_time ) min_time = time; \
+                                  }else if( samples > 300 ){ \
+                                    std::cout << str << " min ----------------------------------  " << min_time << std::endl;} \
+                                  ++samples;}
+
+
+#define k_start_max_timer( str ) k_engine_settings->start_timer( str );
+
+#define k_end_max_timer( str )  {static double max_time = 0.0f; \
+                                  static int32_t samples = 0; \
+                                  if( samples > 200 && samples < 300 ){  \
+                                    double time = k_engine_settings->get_time( str );\
+                                    if( time > max_time ) max_time = time; \
+                                  }else if( samples > 300 ){ \
+                                    std::cout << str << " max ----------------------------------  " << max_time << std::endl;} \
+                                  ++samples;}
+
+#define k_start_print_timer( str ) k_engine_settings->start_timer( str );
+
+#define k_end_print_timer( str )  std::cout << str << " --- " << k_engine_settings->get_time( str ) << std::endl;
 
 #define PATH                    "../assets/"
 #define TPATH                   "../assets/texture/"
@@ -47,7 +73,7 @@ public:
     return m_instance;
   }
 
-  static void shutdown(){
+  static void shutdown() {
     delete m_instance;
     m_instance = nullptr;
   }
@@ -80,8 +106,7 @@ private:
   engine_settings               m_engine_settings;
 
   std::string                   ids_[MAX_TIMERS];
-  LARGE_INTEGER                 starting_time[MAX_TIMERS];
-  LARGE_INTEGER                 ending_time[MAX_TIMERS];
-  LARGE_INTEGER                 elapsed_microseconds[MAX_TIMERS];
-  LARGE_INTEGER                 frequency[MAX_TIMERS];
+
+  std::chrono::high_resolution_clock::time_point
+                                starting_time[MAX_TIMERS];
 };

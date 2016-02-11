@@ -7,6 +7,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 
+#define FPS_SMOOTH 30
 EngineSettings* EngineSettings::m_instance = nullptr;
 
 EngineSettings::EngineSettings() :
@@ -51,15 +52,9 @@ void EngineSettings::start_timer( std::string timer_id ) {
   for( int32_t i = 0; i <= MAX_TIMERS; ++i ) {
     assert( i != MAX_TIMERS && "RAN OUT OF TIMERS " );
 
-    if( ids_[i] == timer_id ) {
-      QueryPerformanceFrequency( &frequency[i] );
-      QueryPerformanceCounter( &starting_time[i] );
-      break;
-    }
-    if( ids_[i] == "NULL" ) {
+    if( ids_[i] == timer_id || ids_[i] == "NULL" ) {
       ids_[i] = timer_id;
-      QueryPerformanceFrequency( &frequency[i] );
-      QueryPerformanceCounter( &starting_time[i] );
+      starting_time[i] = std::chrono::high_resolution_clock::now();
       break;
     }
   }
@@ -67,14 +62,17 @@ void EngineSettings::start_timer( std::string timer_id ) {
 
 double EngineSettings::get_time( std::string timer_id ) {
 
+  using namespace std::chrono;
+  high_resolution_clock::time_point end = high_resolution_clock::now();
+
   for( int32_t i = 0; i <= MAX_TIMERS; ++i ) {
     assert( i != MAX_TIMERS && "RAN OUT OF TIMERS " );
 
     if( ids_[i] == timer_id ) {
-      QueryPerformanceCounter( &ending_time[i] );
-      elapsed_microseconds[i].QuadPart = ending_time[i].QuadPart - starting_time[i].QuadPart;
-      double interval = static_cast< double >( elapsed_microseconds[i].QuadPart ) / frequency[i].QuadPart;
-      return interval;
+
+      duration<double> time_span = duration_cast< duration<double> >( end - starting_time[i] );
+
+      return time_span.count()*1000.0f;
     }
   }
 
@@ -106,10 +104,11 @@ void EngineSettings::end_frame() {
     m_update_smooth /= ( float ) frame_counter;
     m_render_smooth /= ( float ) frame_counter;
 
-    std::string time = "Frame Time-> " + std::to_string( m_fps_smooth )
-      + " FPS -> " + std::to_string( 1.0 / m_fps_smooth )
-      + " Update Time-> " + std::to_string( m_update_smooth )
-      + " Render Time-> " + std::to_string( m_render_smooth );
+    std::string time = 
+      + "FPS-> " + std::to_string( static_cast<int32_t>(1000.0f / m_fps_smooth) )
+      + "    Frame-> " + std::to_string( m_fps_smooth )
+      + "    Update-> " + std::to_string( m_update_smooth )
+      + "    Render-> " + std::to_string( m_render_smooth );
 
     log( time );
 
