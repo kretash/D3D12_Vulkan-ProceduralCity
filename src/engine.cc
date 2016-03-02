@@ -32,19 +32,29 @@ void Engine::init() {
 
   srand( ( uint32_t ) time( nullptr ) );
 
-#ifdef _DEBUG
+#if _DEBUG && __DIRECTX12__ 
   GPU::enable_debug_layer( &m_e_data );
 #endif
 
   m_window = std::make_shared<Window>();
   m_window->init();
 
-  GPU::create_device( &m_e_data );
+#ifdef __DIRECTX12__
   GPU::create_factory( &m_e_data );
+  GPU::create_device( &m_e_data );
   GPU::create_command_queue( &m_e_data );
   GPU::create_swap_chain( &m_e_data, m_window.get() );
   GPU::create_command_allocator( &m_e_data );
   GPU::create_command_list( &m_e_data );
+#elif __VULKAN__
+  GPU::create_instance( &m_e_data );
+  GPU::create_device( &m_e_data );
+  GPU::create_swap_chain( &m_e_data, m_window.get() );
+  GPU::create_command_pool( &m_e_data );
+  GPU::create_setup_command_buffer( &m_e_data );
+  GPU::setup_swap_chain( &m_e_data, k_engine->get_window() );
+  GPU::create_command_buffer( &m_e_data );
+#endif
 
   m_texture_manager = std::make_shared<TextureManager>();
   m_gpu_pool = std::make_shared<GPU_pool>();
@@ -54,18 +64,28 @@ void Engine::init() {
 
   m_gpu_pool->init();
   m_camera->init();
-  m_world->init();
 
+#ifdef __DIRECTX12__
   GPU::create_render_target_view_heap( &m_e_data );
   GPU::create_render_target_view( &m_e_data, k_engine->get_window() );
   GPU::create_depth_stencil_view_heap( &m_e_data );
   GPU::create_depth_stencil_view( &m_e_data, k_engine->get_window() );
-
   GPU::create_fences( &m_e_data );
   GPU::wait_for_previous_frame( &m_e_data );
+#elif __VULKAN__
+  GPU::setup_depth_stencil( &m_e_data, k_engine->get_window() );
+  GPU::setup_render_pass( &m_e_data );
+  GPU::create_pipeline_cache( &m_e_data );
+  GPU::setup_framebuffer( &m_e_data, k_engine->get_window() );
+  GPU::flush_setup_command_buffer( &m_e_data );
+#endif
+
 }
 
 void Engine::prepare() {
+
+  GPU::init_descriptor_pool_and_layout( &m_e_data );
+  m_world->init();
 
   for( int type = rBASIC; type < rCOUNT; ++type ) {
     if( m_renderers[type] != nullptr )
@@ -77,7 +97,6 @@ void Engine::prepare() {
     m_sound->play_sound( k_engine_settings->get_settings().sound_file );
 
   m_texture_manager->prepare();
-
 }
 
 void Engine::update() {
@@ -105,11 +124,11 @@ void Engine::reset_cmd_list() {
 }
 
 void Engine::clear_color() {
-  GPU::clear_rtv( &m_e_data, m_window.get() );
+  GPU::clear_color( &m_e_data, m_window.get() );
 }
 
 void Engine::clear_depth() {
-  GPU::clear_dsv( &m_e_data, m_window.get() );
+  GPU::clear_depth( &m_e_data, m_window.get() );
 }
 
 void Engine::render_skydome( Skydome* s ) {
@@ -131,6 +150,7 @@ void Engine::render( Renderer* r ) {
 
   if( render_bin_size > 0 ) {
 
+#if 0 
     GPU::update_command_buffer(
       &m_e_data,
       r->get_render_data(),
@@ -143,6 +163,14 @@ void Engine::render( Renderer* r ) {
       m_window.get(),
       &( *r->get_render_bin() )[0],
       render_bin_size );
+#else 
+    GPU::populate_command_list(
+      &m_e_data,
+      r->get_render_data(),
+      m_window.get(),
+      &( *r->get_render_bin() )[0],
+      render_bin_size );
+#endif
 
   }
 }

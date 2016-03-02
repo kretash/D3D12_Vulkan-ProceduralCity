@@ -17,7 +17,8 @@ http://opensource.org/licenses/MIT
 #pragma once
 #include <vector>
 
-#include "math/math.hh"
+#include "math/float3.hh"
+#include "math/float4x4.hh"
 #include "base.hh"
 
 class           Camera : public Base {
@@ -41,7 +42,7 @@ private:
   bool          m_cinematic_camera;
   void          _controlled_camera();
 
-  // Cinematic camera and subfunctions
+  // Cinematic camera and sub functions
   void          _cinematic_camera();
   void          _barrel_roll( std::vector<float>* spectrum );
   bool          m_barrel_rolling;

@@ -107,12 +107,11 @@ namespace dx {
     assert( result == S_OK && "ERROR CLOSING THE COMMAND LIST" );
   }
 
-
-
   void create_render_target_view_heap( engine_data* e ) {
     HRESULT result;
     D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-    rtvHeapDesc.NumDescriptors = m_frame_count + 2;
+    //RENDER TO TEXTURE
+    rtvHeapDesc.NumDescriptors = m_frame_count + 0;
     rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
     rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     result = e->m_device->CreateDescriptorHeap( &rtvHeapDesc, IID_PPV_ARGS( &e->m_rtv_heap ) );
@@ -151,7 +150,8 @@ namespace dx {
         rtvHandle );
       rtvHandle.Offset( 1, e->m_rtv_descriptor_size );
     }
-    {
+    //RENDER TO TEXTURE
+    if(false){
       CD3DX12_RESOURCE_DESC color_texture(
         D3D12_RESOURCE_DIMENSION_TEXTURE2D,
         0,
@@ -193,7 +193,8 @@ namespace dx {
         rtvHandle );
       rtvHandle.Offset( 1, e->m_rtv_descriptor_size );
     }
-    {
+    //RENDER TO TEXTURE
+    if( false ) {
       CD3DX12_RESOURCE_DESC color_texture(
         D3D12_RESOURCE_DIMENSION_TEXTURE2D,
         0,
@@ -252,6 +253,7 @@ namespace dx {
       D3D12_TEXTURE_LAYOUT_UNKNOWN,
       D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE );
 
+    //RENDER TO TEXTURE
     if( e->m_msaa_enabled ) {
       depth_texture.SampleDesc.Count = e->m_mssa_count;
       depth_texture.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
@@ -264,7 +266,9 @@ namespace dx {
 
     D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
     depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
+    //RENDER TO TEXTURE
+    //depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
+    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
     depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 
     result = k_engine->get_engine_data()->m_device->CreateCommittedResource( &CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_DEFAULT ),
@@ -276,6 +280,7 @@ namespace dx {
       e->m_dsv_heap->GetCPUDescriptorHandleForHeapStart() );
 
   }
+
   void create_fences( engine_data* d ) {
     HRESULT result;
     result = d->m_device->CreateFence( 0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS( &d->m_fence ) );

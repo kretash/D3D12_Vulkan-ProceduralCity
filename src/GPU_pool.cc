@@ -30,8 +30,8 @@ void GPU_pool::init() {
   m_max_vertex_buffer = BUFFER_SIZE_INFLATE + VERTEX_BUFFER_AVERAGE * building_num;
   m_max_index_buffer = BUFFER_SIZE_INFLATE + INDEX_BUFFER_AVERAGE * building_num;
 
-  GPU::create_empty_vertex_buffer( g_data.get(), m_max_vertex_buffer );
-  GPU::create_empty_index_buffer( g_data.get(), m_max_index_buffer );
+  GPU::create_empty_vertex_buffer( k_engine->get_engine_data(), g_data.get(), m_max_vertex_buffer );
+  GPU::create_empty_index_buffer( k_engine->get_engine_data(), g_data.get(), m_max_index_buffer );
 
   // ------- squeeze a quad in the buffer
   const float size = 1.0f;
@@ -47,7 +47,7 @@ void GPU_pool::init() {
   q.v_block = mem_block( 0, sizeof( quad ) );
   q.v_data = &quad[0];
   m_upload_queue.push_back( q );
-  GPU::upload_queue_into_vertex_buffer( g_data.get(), &m_upload_queue );
+  GPU::upload_queue_into_vertex_buffer( k_engine->get_engine_data(), g_data.get(), &m_upload_queue );
   m_upload_queue.clear();
   // -------------
 
@@ -264,8 +264,8 @@ void GPU_pool::_thread() {
 
       m_queue_mutex.lock();
 
-      GPU::upload_queue_into_vertex_buffer( g_data.get(), &m_upload_queue );
-      GPU::upload_queue_into_index_buffer( g_data.get(), &m_upload_queue );
+      GPU::upload_queue_into_vertex_buffer( k_engine->get_engine_data(), g_data.get(), &m_upload_queue );
+      GPU::upload_queue_into_index_buffer( k_engine->get_engine_data(), g_data.get(), &m_upload_queue );
       m_upload_queue.clear();
 
       m_queue_mutex.unlock();

@@ -52,4 +52,5 @@ Temporary Items
 .hg
 ..hg
 .vs2015
+.bin\core*
 

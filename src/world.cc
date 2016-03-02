@@ -9,8 +9,8 @@ World::World() {
 
 void World::init() {
   m_buffer.light_pos = float3( 0.5, -0.5f, 0.0f );
-  GPU::create_constant_buffer_object( &m_buffer_data, m_buffer );
-  GPU::update_constant_buffer_object( &m_buffer_data, m_buffer );
+  GPU::create_constant_buffer_object( k_engine->get_engine_data(), &m_buffer_data, m_buffer );
+  GPU::update_constant_buffer_object( k_engine->get_engine_data(), &m_buffer_data, m_buffer );
 }
 
 void World::update() {
@@ -61,7 +61,7 @@ void World::update() {
   m_buffer.eye_view = c->get_position();
   m_buffer.view = c->get_view();
 
-  GPU::update_constant_buffer_object( &m_buffer_data, m_buffer );
+  GPU::update_constant_buffer_object( k_engine->get_engine_data(), &m_buffer_data, m_buffer );
 }
 
 World::~World() {

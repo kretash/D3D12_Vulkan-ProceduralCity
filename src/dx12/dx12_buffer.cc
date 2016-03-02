@@ -11,7 +11,7 @@
 #include "core/GPU_pool.hh"
 
 namespace dx {
-  void create_empty_vertex_buffer( geometry_data* g, uint32_t size ) {
+  void create_empty_vertex_buffer( engine_data* e, geometry_data* g, uint32_t size ) {
     HRESULT result;
     const UINT data_buffer_size = sizeof( float ) * ( UINT ) size;
     CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_UPLOAD );
@@ -34,7 +34,7 @@ namespace dx {
     g->m_vertexBuffer->Unmap( 0, nullptr );
   }
 
-  void create_empty_index_buffer( geometry_data* g, uint32_t size ) {
+  void create_empty_index_buffer( engine_data* e, geometry_data* g, uint32_t size ) {
     HRESULT result;
     const UINT indices_buffer_size = sizeof( unsigned int ) * ( UINT ) size;
     CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_UPLOAD );
@@ -57,7 +57,7 @@ namespace dx {
     g->m_indexBuffer->Unmap( 0, nullptr );
   }
 
-  void upload_into_vertex_buffer( geometry_data* g, uint32_t offset, float* array_data, uint32_t size ) {
+  void upload_into_vertex_buffer( engine_data* e, geometry_data* g, uint32_t offset, float* array_data, uint32_t size ) {
     UINT8* data_begin;
     D3D12_RANGE range = { offset, offset + size* sizeof( float ) };
     HRESULT result = g->m_vertexBuffer->Map( 0, &range, reinterpret_cast< void** >( &data_begin ) );
@@ -70,11 +70,11 @@ namespace dx {
 
   }
 
-  void upload_queue_into_vertex_buffer( geometry_data* g, std::vector<queue>* queue ){
+  void upload_queue_into_vertex_buffer( engine_data* e, geometry_data* g, std::vector<queue>* queue ) {
     UINT8* data_begin;
     HRESULT result = g->m_vertexBuffer->Map( 0, nullptr, reinterpret_cast< void** >( &data_begin ) );
 
-    for( int i = 0; i < queue->size(); ++i ){
+    for( int i = 0; i < queue->size(); ++i ) {
       UINT8* data_offset = data_begin + ( *queue )[i].v_block.m_start;
       memcpy( data_offset, ( *queue )[i].v_data, ( *queue )[i].v_block.m_size );
     }
@@ -82,7 +82,7 @@ namespace dx {
     g->m_vertexBuffer->Unmap( 0, nullptr );
   }
 
-  void upload_into_index_buffer( geometry_data* g, uint32_t offset, uint32_t* elements_data, uint32_t size ) {
+  void upload_into_index_buffer( engine_data* e, geometry_data* g, uint32_t offset, uint32_t* elements_data, uint32_t size ) {
 
     UINT8* data_begin;
     D3D12_RANGE range = { offset, offset + size  * sizeof( uint32_t ) };
@@ -95,7 +95,7 @@ namespace dx {
     g->m_indexBuffer->Unmap( 0, nullptr );
   }
 
-  void upload_queue_into_index_buffer( geometry_data* g, std::vector<queue>* queue ) {
+  void upload_queue_into_index_buffer( engine_data* e, geometry_data* g, std::vector<queue>* queue ) {
     UINT8* data_begin;
     HRESULT result = g->m_indexBuffer->Map( 0, nullptr, reinterpret_cast< void** >( &data_begin ) );
 

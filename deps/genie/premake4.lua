@@ -1,4 +1,4 @@
-solution "D3D12 Procedural City"
+solution "D3D12 & Vulkan Procedural City"
 	configurations{"debug", "release"}
 	location "../../vs2015"
 	targetdir "../../bin"
@@ -8,10 +8,14 @@ solution "D3D12 Procedural City"
     flags 'WinMain' 
 	platforms "x64"
 
-	libdirs{ "../../deps/FMOD" }
+	libdirs{ "../FMOD" }
 	links{ "fmod64_vc", "fmodL64_vc" }
 
 	links{ "dxgi", "d3d12", "d3dcompiler" }
+
+	libdirs{ "../vulkan" }
+	links{ "vulkan-1" }
+
 	windowstargetplatformversion "10.0.10586.0"
 
 	project "core"
@@ -25,9 +29,11 @@ solution "D3D12 Procedural City"
 
 		configuration "Debug"
 			targetsuffix "-d" 
-			defines { "WIN32", "_DEBUG", "WINDOWS" }
+			defines { "_CRT_SECURE_NO_WARNINGS", "WIN32", "_DEBUG", "DEBUG", "VK_PROTOTYPES",
+			 "VK_USE_PLATFORM_WIN32_KHR", "_USE_MATH_DEFINES", "NOMINMAX", "WINDOWS" }
 			flags { "Symbols" }
 
 		configuration "Release"
-			defines { "WIN32", "NDEBUG", "WINDOWS" }
+			defines { "_CRT_SECURE_NO_WARNINGS", "WIN32", "NDEBUG", "VK_PROTOTYPES", 
+			"VK_USE_PLATFORM_WIN32_KHR", "_USE_MATH_DEFINES", "NOMINMAX", "WINDOWS" }
 			flags { "Optimize" }

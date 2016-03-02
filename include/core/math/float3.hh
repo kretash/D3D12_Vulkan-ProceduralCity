@@ -1,15 +1,21 @@
 #pragma once
 
-#include "math_func.hh"
+#include <cmath>
 #include <ostream>
+
+// 1.23x faster than normal one
+// Greg Walsh - Quake 3
+float inline FastInvSqrt( float x ) {
+  float xhalf = 0.5f * x;
+  int i = *( int* ) &x;
+  i = 0x5f3759df - ( i >> 1 );
+  x = *( float* ) &i;
+  x = x*( 1.5f - ( xhalf*x*x ) );
+  return x;
+}
 
 struct float3 {
   float x, y, z;
-
-  static float3 normal( const float3& f );
-  static float dot( const float3& d, const float3& f );
-  static float3 cross( const float3& d, const float3& f );
-  static float lenght( const float3& f );
 
   float3() { x = 0, y = 0, z = 0; }
   float3( float x, float y, float z ) {
@@ -18,7 +24,7 @@ struct float3 {
     this->z = z;
   }
   void normalize() {
-    float m = asm_sqrt( x * x + y * y + z * z );
+    float m = sqrtf( x * x + y * y + z * z );
     x /= m;
     y /= m;
     z /= m;
@@ -100,9 +106,37 @@ struct float3 {
     equal &= ( o.z == z );
     return equal;
   }
-};
 
-std::ostream& operator<<( std::ostream& os, const float3& f );
+  static float3 normal( const float3& f ) {
+    float3 normal = f;
+    float m = f.x * f.x + f.y * f.y + f.z * f.z;
+    if( m == 0.0f ) return f;
+    m = FastInvSqrt( m );
+    normal *= m;
+    return normal;
+  }
+
+  static float dot( const float3& d, const float3& f ) {
+    float dot = d.x * f.x + d.y * f.y + d.z * f.z;
+    return dot;
+  }
+
+  static float3 cross( const float3& d, const float3& f ) {
+    float3 r;
+    r.x = d.y * f.z - d.z * f.y;
+    r.y = d.z * f.x - d.x * f.z;
+    r.z = d.x * f.y - d.y * f.x;
+    return r;
+  }
+
+  static float lenght( const float3& f ) {
+    float square_me =
+      f.x * f.x +
+      f.y * f.y +
+      f.z * f.z;
+    return sqrtf( square_me );
+  }
+};
 
 struct plane {
   float x, y, z, d;

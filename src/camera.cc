@@ -17,7 +17,7 @@ Camera::Camera() :
   m_looping_the_loop( false ),
   m_last_loop_the_loop( 0.0f ) {
 
-  m_eye = float3( 0.0f, 2.5f, 0.0f );
+  m_eye = float3( 15.0f, 2.5f, 15.0f );
   m_look_dir = float3( 1.0f, -0.5f, 1.0f );
   m_move_dir = float3( 1.0f, 0.0f, 1.0f );
   m_focus = m_eye + m_look_dir;
@@ -36,7 +36,11 @@ void Camera::init( float aspect_ratio, float fov, float znear, float zfar ) {
   m_fov = fov;
   m_znear = znear;
   m_zfar = zfar;
+#if __DIRECTX12__
   m_up = float3( 0.0f, 1.0f, 0.0f );
+#elif __VULKAN__
+  m_up = float3( 0.0f, -1.0f, 0.0f );
+#endif
 
   m_view = float4x4( 1.0f );
   m_view.look_at( m_eye, m_focus, m_up );
@@ -83,9 +87,17 @@ void Camera::_controlled_camera() {
   mx += accum_cx;
   my += accum_cy;
 
+
+#if __DIRECTX12__
   m_look_dir.x = cosf( mx );
   m_look_dir.z = sinf( mx );
   m_look_dir.y = tanf( my );
+#elif __VULKAN__
+  m_look_dir.x = -cosf( mx );
+  m_look_dir.z = sinf( mx );
+  m_look_dir.y = tanf( my );
+#endif
+
   m_look_dir.normalize();
 
   if( input->get_key( k_W ) ) {
@@ -96,11 +108,19 @@ void Camera::_controlled_camera() {
   }
   if( input->get_key( k_A ) ) {
     float3 strafe = float3( -m_look_dir.z, 0.0f, m_look_dir.x );
+#if __DIRECTX12__
     m_eye = m_eye + ( strafe*movement_speed );
+#elif __VULKAN__
+    m_eye = m_eye - ( strafe*movement_speed );
+#endif
   }
   if( input->get_key( k_D ) ) {
     float3 strafe = float3( -m_look_dir.z, 0.0f, m_look_dir.x );
+#if __DIRECTX12__
     m_eye = m_eye - ( strafe*movement_speed );
+#elif __VULKAN__
+    m_eye = m_eye + ( strafe*movement_speed );
+#endif
   }
   if( input->get_key( k_Q ) ) {
     float3 high = float3( 0.0f, 1.0f, 0.0f );
@@ -119,7 +139,7 @@ void Camera::_controlled_camera() {
 
   m_view = float4x4();
   m_focus = m_eye + m_look_dir;
-  m_view.look_at( m_eye, m_focus, float3( 0.0f, 1.0f, 0.0f ) );
+  m_view.look_at( m_eye, m_focus, m_up );
 }
 
 void Camera::_cinematic_camera() {

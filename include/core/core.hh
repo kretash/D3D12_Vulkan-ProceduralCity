@@ -14,7 +14,7 @@ in compliance with the License. You may obtain a copy of the License at
 http://opensource.org/licenses/MIT
 */
 
-#if 0
+#if 1
   #undef __DIRECTX12__
   #define GPU vk
   #define __VULKAN__ 1
@@ -25,7 +25,6 @@ http://opensource.org/licenses/MIT
 #endif
 
 #define PI 3.14159265358979323846264338f
-#define RENDER_BIN_SIZE 16400
 
 #include <stdint.h>
 

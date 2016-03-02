@@ -9,7 +9,7 @@
 #include "core/engine_settings.hh"
 
 namespace dx {
-  void create_srv_view_heap( renderer_data* r, int32_t size ) {
+  void create_srv_view_heap( engine_data* e, renderer_data* r, int32_t size ) {
     HRESULT result = 0;
 
     D3D12_DESCRIPTOR_HEAP_DESC srv_heap_desc = {};
@@ -25,7 +25,7 @@ namespace dx {
     r->m_cbv_srv_descriptor_size = k_engine->get_engine_data()->m_device->GetDescriptorHandleIncrementSize(
       D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV );
   }
-  
+
   void create_root_signature( renderer_data* r ) {
     HRESULT result;
 
@@ -138,10 +138,6 @@ namespace dx {
       r->pixelShader->GetBufferSize() };
 
     CD3DX12_RASTERIZER_DESC raster_desc = CD3DX12_RASTERIZER_DESC( D3D12_DEFAULT );
-    //raster_desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
-    //raster_desc.AntialiasedLineEnable = true;
-    //raster_desc.MultisampleEnable = TRUE;
-    //raster_desc.ForcedSampleCount = 4;
     psoDesc.RasterizerState = raster_desc;
 
     psoDesc.BlendState = CD3DX12_BLEND_DESC( D3D12_DEFAULT );
@@ -152,8 +148,13 @@ namespace dx {
     psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
     psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 
-    psoDesc.SampleDesc.Count = 4;
-    psoDesc.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
+    bool msaa_enabled = k_engine_settings->get_settings().msaa_enabled;
+    int32_t mssa_count = k_engine_settings->get_settings().msaa_count;
+
+    psoDesc.SampleDesc.Count = mssa_count;
+    psoDesc.SampleDesc.Quality = 0;
+    if( msaa_enabled )
+      psoDesc.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
 
     result = k_engine->get_engine_data()->m_device->CreateGraphicsPipelineState( &psoDesc, IID_PPV_ARGS( &r->m_pipeline_state ) );
     assert( result == S_OK && "ERROR CREATING THE PIPELINE STATE" );

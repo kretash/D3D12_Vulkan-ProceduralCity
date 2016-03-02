@@ -2,11 +2,11 @@
 	"resolution_height" : 720,
 	"resolution_width" : 1280,
 	"fullscreen" : false,
-	"grid" : 64,
+	"grid" : 16,
 	"animated_camera" : false,
 	"play_sound" : false,
 	"sound_file" : "weird.mp3",
-	"MSAA_enabled" : true,
-	"MSAA_count" : 8,
+	"MSAA_enabled" : false,
+	"MSAA_count" : 1,
 	"upscale_render" : 1.0
 }

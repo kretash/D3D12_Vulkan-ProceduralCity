@@ -30,7 +30,7 @@ http://opensource.org/licenses/MIT
 #include <vector>
 
 #include "types.hh"
-#include "math/math.hh"
+#include "math/float4x4.hh"
 #include "tools.hh"
 
 class Window;
@@ -273,22 +273,21 @@ namespace dx {
   void create_command_list( engine_data* d );
   void create_fences( engine_data* d );
   void wait_for_previous_frame( engine_data* d );
-
   void create_depth_stencil_view_heap( engine_data* e );
   void create_render_target_view_heap( engine_data* e );
   void create_depth_stencil_view( engine_data* e, Window* w );
   void create_render_target_view( engine_data* e, Window* w );
 
   //buffer
-  void create_empty_vertex_buffer( geometry_data* g, uint32_t size );
-  void create_empty_index_buffer( geometry_data* g, uint32_t size );
-  void upload_into_vertex_buffer( geometry_data* g, uint32_t offset, float* array_data, uint32_t size );
-  void upload_queue_into_vertex_buffer( geometry_data* g, std::vector<queue>* queue );
-  void upload_into_index_buffer( geometry_data* g, uint32_t offset, uint32_t* elements_data, uint32_t size );
-  void upload_queue_into_index_buffer( geometry_data* g, std::vector<queue>* queue );
+  void create_empty_vertex_buffer( engine_data* e, geometry_data* g, uint32_t size );
+  void create_empty_index_buffer( engine_data* e, geometry_data* g, uint32_t size );
+  void upload_into_vertex_buffer( engine_data* e, geometry_data* g, uint32_t offset, float* array_data, uint32_t size );
+  void upload_queue_into_vertex_buffer( engine_data* e, geometry_data* g, std::vector<queue>* queue );
+  void upload_into_index_buffer( engine_data* e, geometry_data* g, uint32_t offset, uint32_t* elements_data, uint32_t size );
+  void upload_queue_into_index_buffer( engine_data* e, geometry_data* g, std::vector<queue>* queue );
 
   //renderer
-  void create_srv_view_heap( renderer_data* r, int32_t size );
+  void create_srv_view_heap( engine_data* e, renderer_data* r, int32_t size );
   void create_root_signature( renderer_data* r );
   void load_and_compile_shaders( renderer_data* r, render_type s );
   void create_pipeline_state_object( renderer_data* r );
@@ -310,17 +309,19 @@ namespace dx {
   void clear_texture( texture_data* t );
 
   //drawable
-  void create_constant_buffer_object( constant_buffer_data* cbd, constant_buffer cb );
-  void update_constant_buffer_object( constant_buffer_data* cbd, constant_buffer cb );
-
-  void create_instance_buffer_object( renderer_data* r, instance_buffer* ub );
-  void create_instance_buffer_view( renderer_data* r, drawable_data* d, uint64_t buffer_offset, int32_t cbv_offset );
-  void update_instance_buffer_object( renderer_data* r, instance_buffer* ub );
+  void init_descriptor_pool_and_layout( engine_data* e );
+  void create_constant_buffer_object( engine_data* e, constant_buffer_data* cbd, constant_buffer cb );
+  void update_constant_buffer_object( engine_data* e, constant_buffer_data* cbd, constant_buffer cb );
+  void create_instance_buffer_object( engine_data* e, renderer_data* r, instance_buffer* ub );
+  void create_instance_buffer_view( engine_data* e, renderer_data* r, drawable_data* d, uint64_t buffer_offset, int32_t cbv_offset );
+  void update_instance_buffer_object( engine_data* e, renderer_data* r, instance_buffer* ub );
+  void create_and_update_descriptor_sets( engine_data* e, renderer_data* r, std::vector<Drawable*>* draw );
+  void update_decriptor_sets( engine_data* e, renderer_data* r, std::vector<Drawable*>* draw );
 
   //render
   void reset_render_command_list( engine_data* e, Window* w );
-  void clear_rtv( engine_data* e, Window* w );
-  void clear_dsv( engine_data* e, Window* w );
+  void clear_color( engine_data* e, Window* w );
+  void clear_depth( engine_data* e, Window* w );
 
   void populate_command_list( engine_data* d, renderer_data* r, Window* w, Drawable** draw, uint32_t d_count );
   void execute_command_lists( engine_data* d, renderer_data* r );

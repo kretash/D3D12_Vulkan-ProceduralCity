@@ -18,7 +18,6 @@ http://opensource.org/licenses/MIT
 
 #include <Windows.h>
 #include <Xinput.h>
-#include "math/math.hh"
 #include "types.hh"
 
 #pragma comment(lib, "XInput.lib")

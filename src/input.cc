@@ -7,7 +7,7 @@ Input::Input() {
   for( int i = 0; i < nn_TOTAL_KEYS; ++i ) {
     m_event[i] = false;
   }
-  m_focus = true;
+  m_focus = false;
 
   m_controller_connected = false;
   m_controller_num = 0;

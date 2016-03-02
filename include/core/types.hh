@@ -16,7 +16,8 @@ http://opensource.org/licenses/MIT
 
 #pragma once
 #include <Windows.h>
-#include "math/math.hh"
+#include "math/float3.hh"
+#include "math/float2.hh"
 
 //Renderer
 enum render_type {

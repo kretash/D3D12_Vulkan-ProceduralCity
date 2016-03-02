@@ -1,4 +1,5 @@
 #include <cassert>
+#include <algorithm>
 
 #include "core/building.hh"
 #include "core/GPU_pool.hh"
@@ -156,7 +157,7 @@ void Building::_generate_classic_building() {
     float d = pow( m_instance_decrement, i );
 
     int current_floors = m_num_floors - 2 * i;
-    current_floors = max( 1, current_floors );
+    current_floors = std::max( 1, current_floors );
 
     bs.init_s( m_num_sides, current_floors, 3.0f, float3( 0.0f, current_height, 0.0f ) );
     bs.init_r( m_iteration_group, m_angle_s[i + 1], side_s, d*m_base_size, m_main_texture_set );
@@ -250,7 +251,7 @@ void Building::_generate_classic_building() {
     float d = pow( m_instance_decrement, i );
 
     int current_floors = m_num_floors - 2 * i;
-    current_floors = max( 1, current_floors );
+    current_floors = std::max( 1, current_floors );
 
     bs.init_s( m_num_sides, current_floors, 3.0f, float3( 0.0f, current_height, 0.0f ) );
     bs.init_r( m_iteration_group, m_angle_s[i + 1], side_s, d*m_base_size, m_main_texture_set );

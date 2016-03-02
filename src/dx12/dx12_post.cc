@@ -61,11 +61,12 @@ namespace dx {
     srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
     srv_desc.Texture2D.MipLevels = 1;
 
+    //RENDER TO TEXTURE
     CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle( r->m_srv_heap->GetCPUDescriptorHandleForHeapStart() );
-    e->m_device->CreateShaderResourceView( e->m_msaa_render_target.Get(), &srv_desc, srvHandle );
+    //e->m_device->CreateShaderResourceView( e->m_msaa_render_target.Get(), &srv_desc, srvHandle );
 
     srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-    srvHandle.Offset( 1, r->m_cbv_srv_descriptor_size );
+    //srvHandle.Offset( 1, r->m_cbv_srv_descriptor_size );
     e->m_device->CreateShaderResourceView( e->m_post_render_target.Get(), &srv_desc, srvHandle );
   }
 

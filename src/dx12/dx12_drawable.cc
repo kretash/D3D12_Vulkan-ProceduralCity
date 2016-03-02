@@ -8,7 +8,11 @@
 #include "core/drawable.hh"
 
 namespace dx {
-  void create_constant_buffer_object( constant_buffer_data* cbd, constant_buffer cb ) {
+  void init_descriptor_pool_and_layout( engine_data* e ){
+  
+  }
+
+  void create_constant_buffer_object( engine_data* e, constant_buffer_data* cbd, constant_buffer cb ) {
     HRESULT result;
 
     //Constant buffers // Uniforms
@@ -26,7 +30,7 @@ namespace dx {
     cbd->m_constant_buffer->SetName(L"CBV");
   }
 
-  void update_constant_buffer_object( constant_buffer_data* cbd, constant_buffer cb ) {
+  void update_constant_buffer_object( engine_data* e, constant_buffer_data* cbd, constant_buffer cb ) {
     HRESULT result = cbd->m_constant_buffer->Map( 0, nullptr, 
       reinterpret_cast< void** >( &cbd->m_constant_buffer_WO ) );
     assert( result == S_OK && "MAPPING THE CONSTANT BUFFER FALILED" );
@@ -34,7 +38,7 @@ namespace dx {
     cbd->m_constant_buffer->Unmap( 0, nullptr );
   }
   
-  void create_instance_buffer_object( renderer_data* r, instance_buffer* ub) {
+  void create_instance_buffer_object( engine_data* e, renderer_data* r, instance_buffer* ub) {
     HRESULT result;
 
     CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_UPLOAD );
@@ -53,7 +57,8 @@ namespace dx {
 
   }
 
-  void create_instance_buffer_view( renderer_data* r, drawable_data* d, uint64_t buffer_offset, int32_t offset ){
+  void create_instance_buffer_view( engine_data* e, renderer_data* r, drawable_data* d, uint64_t buffer_offset, int32_t offset ){
+    return;
     const UINT buffer_size = sizeof( instance_buffer ) + 255 & ~255;
     r->m_instance_buffer_desc = {};
     D3D12_GPU_VIRTUAL_ADDRESS addr = r->m_instance_buffer->GetGPUVirtualAddress();
@@ -69,11 +74,19 @@ namespace dx {
   
   }
 
-  void update_instance_buffer_object( renderer_data* r, instance_buffer* ub ) {
+  void update_instance_buffer_object( engine_data* e, renderer_data* r, instance_buffer* ub ) {
     HRESULT result = r->m_instance_buffer->Map( 0, nullptr, reinterpret_cast< void** >( &r->m_instance_buffer_WO ) );
     assert( result == S_OK && "MAPPING THE CONSTANT BUFFER FALILED" );
     memcpy( r->m_instance_buffer_WO, ub, sizeof( instance_buffer ) * k_engine->get_total_drawables() );
     r->m_instance_buffer->Unmap( 0, nullptr );
+  }
+
+  void create_and_update_descriptor_sets( engine_data* e, renderer_data* r, std::vector<Drawable*>* draw ) {
+
+  }
+
+  void update_decriptor_sets( engine_data* e, renderer_data* r, std::vector<Drawable*>* draw ) {
+
   }
 }
 

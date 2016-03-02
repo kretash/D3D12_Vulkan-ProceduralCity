@@ -22,17 +22,6 @@ void Renderer::create( render_type t ) {
   m_render_type = t;
   k_engine->set_renderer( this );
 
-  if( m_render_type == rBASIC || m_render_type == rSKYDOME || m_render_type == rTEXTURE ) {
-    GPU::create_root_signature( &r_data );
-    GPU::load_and_compile_shaders( &r_data, m_render_type );
-    GPU::create_pipeline_state_object( &r_data );
-  } else if( m_render_type == rPOST ) {
-    GPU::create_srv_view_heap( &r_data, 2 );
-    GPU::add_post_textures_to_srv( k_engine->get_engine_data(), &r_data );
-    GPU::create_post_root_signature( &r_data );
-    GPU::load_and_compile_shaders( &r_data, m_render_type );
-    GPU::create_post_pipeline_state_object( &r_data );
-  }
 }
 
 void Renderer::add_child( Drawable* d ) {
@@ -55,7 +44,7 @@ void Renderer::prepare() {
     float4x4 view = c->get_view();
     float4x4 proj = c->get_projection();
 
-    GPU::create_instance_buffer_object( &r_data, &m_instance_buffer[0] );
+    GPU::create_instance_buffer_object( k_engine->get_engine_data(), &r_data, &m_instance_buffer[0] );
 
     uint32_t w = sizeof( instance_buffer );
     const uint32_t buffer_size = sizeof( instance_buffer ) + 255 & ~255;
@@ -71,14 +60,48 @@ void Renderer::prepare() {
       m_instance_buffer[id].d_texture_id = ( *rb )[i]->get_texture()->get_id( tDIFFUSE );
       m_instance_buffer[id].n_texture_id = ( *rb )[i]->get_texture()->get_id( tNORMAL );
       m_instance_buffer[id].s_texture_id = ( *rb )[i]->get_texture()->get_id( tSPECULAR );
+
+#if __VULKAN__ //Temporary
+      ( *rb )[i]->get_drawable_data()->m_uniform_buffer = m_instance_buffer[id];
+#endif
+
+      GPU::create_instance_buffer_view( k_engine->get_engine_data(), &r_data, (*rb)[i]->get_drawable_data(), 
+        ( *rb )[i]->get_drawable_id()*buffer_size, 0 );
     }
 
-    GPU::create_command_signature( k_engine->get_engine_data(), &r_data );
+    GPU::create_and_update_descriptor_sets( k_engine->get_engine_data(), &r_data, rb );
 
     if( m_render_type != rSKYDOME )
       GPU::create_and_fill_command_buffer( k_engine->get_engine_data(), &r_data, &( *rb )[0], m_render_bin_objects );
   } else {
 
+  }
+
+
+  if( m_render_type == rBASIC || m_render_type == rSKYDOME || m_render_type == rTEXTURE ) {
+    GPU::create_root_signature( &r_data );
+
+#ifdef __VULKAN__
+    GPU::create_srv_view_heap( k_engine->get_engine_data(), &r_data, 2 );
+    GPU::create_graphics_pipeline( k_engine->get_engine_data(), &r_data, m_render_type );
+#elif __DIRECTX12__
+    GPU::load_and_compile_shaders( &r_data, m_render_type );
+    GPU::create_pipeline_state_object( &r_data );
+#endif
+
+  } else if( m_render_type == rPOST ) {
+    GPU::create_srv_view_heap( k_engine->get_engine_data(), &r_data, 2 );
+    GPU::add_post_textures_to_srv( k_engine->get_engine_data(), &r_data );
+    GPU::create_post_root_signature( &r_data );
+
+#ifdef __VULKAN__
+    GPU::create_graphics_pipeline( k_engine->get_engine_data(), &r_data, m_render_type );
+#elif __DIRECTX12__
+    GPU::load_and_compile_shaders( &r_data, m_render_type );
+    GPU::create_pipeline_state_object( &r_data );
+#endif
+
+    GPU::create_command_signature( k_engine->get_engine_data(), &r_data );
   }
 }
 
@@ -105,17 +128,27 @@ void Renderer::update() {
 
       float4x4 model = ( *rb )[i]->get_model();
       m_instance_buffer[id].mvp = model * view * proj;
-      m_instance_buffer[id].mvp.transpose();
-
       m_instance_buffer[id].model = model;
+
+#if __DIRECTX12__
+      m_instance_buffer[id].mvp.transpose();
+#elif __VULKAN__
+      m_instance_buffer[id].model.transpose();
+#endif
+
       m_instance_buffer[id].normal_matrix = float4x4::inverse( model );
 
       m_instance_buffer[id].d_texture_id = ( *rb )[i]->get_texture()->get_id( tDIFFUSE );
       m_instance_buffer[id].n_texture_id = ( *rb )[i]->get_texture()->get_id( tNORMAL );
       m_instance_buffer[id].s_texture_id = ( *rb )[i]->get_texture()->get_id( tSPECULAR );
+
+#if __VULKAN__ //Temporary
+      ( *rb )[i]->get_drawable_data()->m_uniform_buffer = m_instance_buffer[id];
+#endif
     }
 
-    GPU::update_instance_buffer_object( &r_data, &m_instance_buffer[0] );//~0.5ms
+    GPU::update_instance_buffer_object( k_engine->get_engine_data(), &r_data, &m_instance_buffer[0] );//~0.5ms
+    GPU::update_decriptor_sets( k_engine->get_engine_data(), &r_data, rb );
   }
 }
 

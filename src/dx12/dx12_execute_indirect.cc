@@ -212,16 +212,10 @@ namespace dx {
 
     e->m_render_command_list->SetPipelineState( r->m_pipeline_state.Get() );
     e->m_render_command_list->SetGraphicsRootSignature( r->m_root_signature.Get() );
-
-    ID3D12DescriptorHeap* ppHeaps[] = { r->m_srv_heap.Get() };
-    e->m_render_command_list->SetDescriptorHeaps( _countof( ppHeaps ), ppHeaps );
-
     e->m_render_command_list->IASetPrimitiveTopology( D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
     geometry_data* g_data = k_engine->get_GPU_pool()->get_geometry_data();
-
     e->m_render_command_list->IASetVertexBuffers( 0, 1, &g_data->m_vertexBufferView );
-
     e->m_render_command_list->IASetIndexBuffer( &g_data->m_indexBufferView );
 
     e->m_render_command_list->SetGraphicsRootConstantBufferView(
@@ -230,6 +224,8 @@ namespace dx {
     e->m_render_command_list->SetGraphicsRootConstantBufferView(
       GRP_CONSTANT_CBV, k_engine->get_world()->get_buffer_data()->m_constant_buffer->GetGPUVirtualAddress() );
 
+    ID3D12DescriptorHeap* ppHeaps[] = { r->m_srv_heap.Get() };
+    e->m_render_command_list->SetDescriptorHeaps( _countof( ppHeaps ), ppHeaps );
     CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle( r->m_srv_heap->GetGPUDescriptorHandleForHeapStart(), 0,
       r->m_cbv_srv_descriptor_size );
 

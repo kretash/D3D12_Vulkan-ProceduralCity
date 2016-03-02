@@ -5,36 +5,71 @@
 #include "core/input.hh"
 #include <algorithm>
 
-RenderManager::RenderManager(){}
+RenderManager::RenderManager() {}
 
 void RenderManager::add_child( Drawable* d ) {
   m_render_bin.push_back( d );
 }
 
 void RenderManager::update( float df ) {
-  
-  Camera* c = k_engine->get_camera();
-  float3 c_pos = c->get_position();
-  _generate_frustum_planes();
+#if 1
+  static bool update_RM = true;
+  Input* input = k_engine->get_input();
 
-  float3 camera = k_engine->get_camera()->get_position();
-  m_active_render_bin.clear();
+  if( input->get_key( k_F4 ) )
+    update_RM = true;
 
-  for( int32_t i = 0; i < m_render_bin.size(); ++i ) {
+  if( input->get_key( k_F5 ) )
+    update_RM = false;
 
-    float3 pos = m_render_bin[i]->get_position();
+  if( update_RM ) {
 
-    if( 0.0f < m_render_bin[i]->get_radius() ) {
+#endif // dont forget the } at the end
 
-      float maxh = m_render_bin[i]->get_max_height();
+    Camera* c = k_engine->get_camera();
+    float3 c_pos = c->get_position();
+    _generate_frustum_planes();
 
-      float3 v_lenght = c_pos - pos;
-      float length = float3::lenght( v_lenght );
-      m_render_bin[i]->set_distance( length );
+    float3 camera = k_engine->get_camera()->get_position();
+    m_active_render_bin.clear();
 
-      if( _inside_frustum( pos, m_render_bin[i]->get_radius(), maxh ) ) {
+    for( int32_t i = 0; i < m_render_bin.size(); ++i ) {
 
+      float3 pos = m_render_bin[i]->get_position();
+
+      if( 0.0f < m_render_bin[i]->get_radius() ) {
+
+        float maxh = m_render_bin[i]->get_max_height();
+
+        float3 v_lenght = c_pos - pos;
+        float length = float3::lenght( v_lenght );
+        m_render_bin[i]->set_distance( length );
+
+        if( _inside_frustum( pos, m_render_bin[i]->get_radius(), maxh ) ||
+            float3::lenght( c_pos - pos ) < 100.0f
+          ) {
+
+          m_active_render_bin.push_back( m_render_bin[i] );
+
+          if( length < 500 )
+            m_render_bin[i]->set_lod( 0 );
+          else if( length < 1000 )
+            m_render_bin[i]->set_lod( 1 );
+          else
+            m_render_bin[i]->set_lod( 2 );
+
+          m_render_bin[i]->set_active( true );
+
+        } else {
+          //Outside frustum
+          m_render_bin[i]->set_active( false );
+        }
+      } else {
+
+        //Ignore frustum is enabled
         m_active_render_bin.push_back( m_render_bin[i] );
+        float3 v_lenght = c_pos - pos;
+        float length = float3::lenght( v_lenght );
 
         if( length < 500 )
           m_render_bin[i]->set_lod( 0 );
@@ -43,31 +78,12 @@ void RenderManager::update( float df ) {
         else
           m_render_bin[i]->set_lod( 2 );
 
+        m_render_bin[i]->set_distance( length );
         m_render_bin[i]->set_active( true );
-
-      } else {
-        //Outside frustum
-        m_render_bin[i]->set_active( false );
       }
-    } else {
-
-      //Ignore frustum is enabled
-      m_active_render_bin.push_back( m_render_bin[i] );
-      float3 v_lenght = c_pos - pos;
-      float length = float3::lenght( v_lenght );
-
-      if( length < 500 )
-        m_render_bin[i]->set_lod( 0 );
-      else if( length < 1000 )
-        m_render_bin[i]->set_lod( 1 );
-      else
-        m_render_bin[i]->set_lod( 2 );
-
-      m_render_bin[i]->set_distance( length );
-      m_render_bin[i]->set_active( true );
     }
-  }
 
+  }
 }
 
 bool RenderManager::_inside_frustum( float3 point, float r, float maxh ) {
@@ -92,12 +108,20 @@ bool RenderManager::_inside_frustum( float3 point, float r, float maxh ) {
   if( d <= 0 ) return false;
 
   d = float3::dot( point, m_frustum_planes[2].xyz() );
+#ifdef __DIRECTX12__
   d += r;
+#elif __VULKAN__
+  d += maxh + r;
+#endif
   d += m_frustum_planes[2].d;
   if( d <= 0 ) return false;
 
   d = float3::dot( point, m_frustum_planes[3].xyz() );
-  d += maxh;
+#ifdef __DIRECTX12__
+  d += maxh + r;
+#elif __VULKAN__
+  d += r;
+#endif
   d += m_frustum_planes[3].d;
   if( d <= 0 ) return false;
 
@@ -119,8 +143,6 @@ void RenderManager::_generate_frustum_planes() {
   Camera* cc = k_engine->get_camera();
   float4x4 c = cc->get_view() * cc->get_projection();
   //c.transpose()
-
-#ifdef __DIRECTX12__
 
   m_frustum_planes[0] = plane( c.m[0][3] + c.m[0][0],
     c.m[1][3] + c.m[1][0],
@@ -148,30 +170,7 @@ void RenderManager::_generate_frustum_planes() {
     c.m[1][3] - c.m[1][2],
     c.m[2][3] - c.m[2][2],
     c.m[3][3] - c.m[3][2] );
-
-#elif __VULKAN__
-
-  m_frustum_planes[0] = plane( c.m[3][0] + c.m[0][0], c.m[3][1] + c.m[0][1],
-    c.m[3][2] + c.m[0][2], c.m[3][3] + c.m[0][3] );
-
-  m_frustum_planes[1] = plane( c.m[3][0] - c.m[0][0], c.m[3][1] - c.m[0][1],
-    c.m[3][2] - c.m[0][2], c.m[3][3] - c.m[0][3] );
-
-  m_frustum_planes[2] = plane( c.m[3][0] - c.m[1][0], c.m[3][1] - c.m[1][1],
-    c.m[3][2] - c.m[1][2], c.m[3][3] - c.m[1][3] );
-
-  m_frustum_planes[3] = plane( c.m[3][0] + c.m[1][0], c.m[3][1] + c.m[1][1],
-    c.m[3][2] + c.m[1][2], c.m[3][3] + c.m[1][3] );
-
-  m_frustum_planes[4] = plane( c.m[3][0] + c.m[2][0], c.m[3][1] + c.m[2][1],
-    c.m[3][2] + c.m[2][2], c.m[3][3] + c.m[2][3] );
-
-  m_frustum_planes[5] = plane( c.m[3][0] - c.m[2][0], c.m[3][1] - c.m[2][1],
-    c.m[3][2] - c.m[2][2], c.m[3][3] - c.m[2][3] );
-#else
-#error no API defined at frustum planes computation
-#endif
-
+  
   m_frustum_planes[0].normalize();
   m_frustum_planes[1].normalize();
   m_frustum_planes[2].normalize();

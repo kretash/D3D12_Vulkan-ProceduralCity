@@ -20,7 +20,6 @@ void Skydome::init(){
 
   m_renderer->create( rSKYDOME );
   m_renderer->add_child( m_drawable.get() );
-  m_renderer->prepare();
 }
 
 void Skydome::update(){

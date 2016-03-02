@@ -40,7 +40,7 @@ void TextureManager::link_drawable( Drawable* d ) {
 
 void TextureManager::prepare() {
 
-  GPU::create_srv_view_heap( k_engine->get_renderer( rTEXTURE )->get_render_data(), MAX_TEXTURES );
+  GPU::create_srv_view_heap( k_engine->get_engine_data(), k_engine->get_renderer( rTEXTURE )->get_render_data(), MAX_TEXTURES );
   GPU::reset_texture_command_list( k_engine->get_engine_data() );
 
   _generate_placeholder_texture();

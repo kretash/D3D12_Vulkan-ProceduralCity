@@ -33,7 +33,6 @@ public:
 
   std::vector<Drawable*>*         get_render_bin() { return m_render_manager->get_active_render_bin(); }
   int                             get_render_bin_size() { return m_render_manager->get_active_render_bin_size(); }
-  bin_offsets*                    get_bin_offsets() { return m_bin_offsets; }
   renderer_data*                  get_render_data() { return &r_data; }
   render_type                     get_renderer_type(){ return m_render_type; }
   
@@ -44,5 +43,4 @@ private:
   int32_t                         m_cbv_srv_offset;
   std::vector<instance_buffer>    m_instance_buffer;
   RenderManager*                  m_render_manager;
-  bin_offsets                     m_bin_offsets[RENDER_BIN_SIZE];
 };
