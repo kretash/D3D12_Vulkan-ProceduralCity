@@ -84,11 +84,11 @@ struct move_operation {
 };
 
 struct mem_block {
-  size_t m_start;
-  size_t m_size;
+  uint64_t m_start;
+  uint64_t m_size;
 
   mem_block() : m_start( 0 ), m_size( 0 ) {}
-  mem_block( size_t start, size_t size ) : m_start( start ), m_size( size ) {}
+  mem_block( uint64_t start, uint64_t size ) : m_start( start ), m_size( size ) {}
   bool operator<( mem_block o ) {
     return m_start < o.m_start;
   }

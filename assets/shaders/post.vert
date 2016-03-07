@@ -20,7 +20,7 @@ layout (set = 0, binding = 0) uniform UBO1
   uint s_texture_id;
 
   uint pad[13];
-} istance;
+} instance;
 
 layout (set = 1, binding = 0) uniform UBO2
 {
@@ -41,8 +41,8 @@ void main()
 {
 	frag_normal = normal;
 
-  	frag_normal = ( vec4( normal, 0.0f) * inverse(istance.model) ).xyz;
+  	frag_normal = ( vec4( normal, 0.0f) * inverse(instance.model) ).xyz;
   	frag_normal = normalize( frag_normal );
 
-	gl_Position = istance.mvp * vec4(position.xyz, 1.0);
+	gl_Position = instance.mvp * vec4(position.xyz, 1.0);
 }

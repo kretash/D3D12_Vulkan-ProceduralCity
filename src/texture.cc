@@ -95,19 +95,15 @@ void Texture::apply_future_ids() {
 }
 
 void Texture::clear_upload() {
-  GPU::clear_texture_upload( &m_texture_data[tDIFFUSE] );
-  GPU::clear_texture_upload( &m_texture_data[tNORMAL] );
-  GPU::clear_texture_upload( &m_texture_data[tSPECULAR] );
+  GPU::clear_texture_upload( k_engine->get_engine_data(), &m_texture_data[tDIFFUSE] );
+  GPU::clear_texture_upload( k_engine->get_engine_data(), &m_texture_data[tNORMAL] );
+  GPU::clear_texture_upload( k_engine->get_engine_data(), &m_texture_data[tSPECULAR] );
 }
 
 void Texture::clear() {
-  GPU::clear_texture( &m_texture_data[tDIFFUSE] );
-  GPU::clear_texture( &m_texture_data[tNORMAL] );
-  GPU::clear_texture( &m_texture_data[tSPECULAR] );
-  //Clearing the upload too just in case
-  GPU::clear_texture_upload( &m_texture_data[tDIFFUSE] );
-  GPU::clear_texture_upload( &m_texture_data[tNORMAL] );
-  GPU::clear_texture_upload( &m_texture_data[tSPECULAR] );
+  GPU::clear_texture( k_engine->get_engine_data(), &m_texture_data[tDIFFUSE] );
+  GPU::clear_texture( k_engine->get_engine_data(), &m_texture_data[tNORMAL] );
+  GPU::clear_texture( k_engine->get_engine_data(), &m_texture_data[tSPECULAR] );
 }
 
 void Texture::set_placeholder( int32_t d_id, int32_t n_id, int32_t s_id ) {

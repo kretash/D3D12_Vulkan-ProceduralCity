@@ -132,8 +132,12 @@ void Camera::_controlled_camera() {
   }
 
   float3 strafe = -float3( -m_look_dir.z, 0.0f, m_look_dir.x );
-  m_eye += ( m_look_dir*movement_speed ) * input->get_gamepad().thumb_L_vert;
+#if __DIRECTX12__
   m_eye += ( strafe*movement_speed ) * input->get_gamepad().thumb_L_side;
+#elif __VULKAN__
+  m_eye -= ( strafe*movement_speed ) * input->get_gamepad().thumb_L_side;
+#endif
+  m_eye += ( m_look_dir*movement_speed ) * input->get_gamepad().thumb_L_vert;
   m_eye += ( float3( 0.0f, -input->get_gamepad().left_trigger, 0.0f )*movement_speed );
   m_eye += ( float3( 0.0f, +input->get_gamepad().right_trigger, 0.0f )*movement_speed );
 

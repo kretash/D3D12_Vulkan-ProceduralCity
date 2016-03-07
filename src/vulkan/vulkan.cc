@@ -12,9 +12,9 @@ namespace vk {
 
   void create_instance( engine_data* e ) {
     VkApplicationInfo app_info = {};
-    app_info.pApplicationName = "Vulkan Test";
+    app_info.pApplicationName = "Procedural City Rendering With The New Generation Graphics APIs";
     app_info.pEngineName = "Unreal Unity 8";
-    app_info.apiVersion = VK_MAKE_VERSION( 1, 0, 2 );
+    app_info.apiVersion = VK_MAKE_VERSION( 1, 0, 4 );
 
     std::vector<const char*> enabledExtensions = { VK_KHR_SURFACE_EXTENSION_NAME };
     enabledExtensions.push_back( VK_KHR_WIN32_SURFACE_EXTENSION_NAME );
@@ -46,6 +46,7 @@ namespace vk {
     vkassert( vkr );
 
     e->m_graphics_queue_index = 0;
+    e->m_transfer_queue_index = 0;
     uint32_t queue_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties( e->m_physical_device, &queue_count, nullptr );
     assert( queue_count >= 1 );
@@ -58,7 +59,12 @@ namespace vk {
       if( queue_props[e->m_graphics_queue_index].queueFlags & VK_QUEUE_GRAPHICS_BIT )
         break;
     }
+    for( e->m_transfer_queue_index = 0; e->m_transfer_queue_index < queue_count; ++e->m_transfer_queue_index ) {
+      if( queue_props[e->m_transfer_queue_index].queueFlags & VK_QUEUE_TRANSFER_BIT )
+        break;
+    }
     assert( e->m_graphics_queue_index < queue_count );
+    assert( e->m_transfer_queue_index < queue_count );
 
     std::array< float, 1> queue_priorities = { 0.0f };
     VkDeviceQueueCreateInfo queue_create_info = {};
@@ -98,6 +104,7 @@ namespace vk {
     vkGetPhysicalDeviceMemoryProperties( e->m_physical_device, &e->m_device_memory_properties );
 
     vkGetDeviceQueue( e->m_device, e->m_graphics_queue_index, 0, &e->m_queue );
+    vkGetDeviceQueue( e->m_device, e->m_transfer_queue_index, 0, &e->m_texture_queue );
 
     std::vector<VkFormat> depth_formats = { VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM };
     bool depth_format_found = false;
@@ -148,6 +155,16 @@ namespace vk {
 
     vkr = vkBeginCommandBuffer( e->m_setup_command_buffer, &command_buffer_begin_info );
     vkassert( vkr );
+
+    {//texture command buffer, look for another place
+      VkCommandBufferAllocateInfo command_buffer_allocate_info =
+        vkTools::initializers::commandBufferAllocateInfo(
+          e->m_command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1 );
+
+      VkResult vkr = vkAllocateCommandBuffers( e->m_device, &command_buffer_allocate_info, &e->m_texture_command_buffer );
+      vkassert( vkr );
+    }
+
   }
 
   void setup_swap_chain( engine_data* e, Window* w ) {
@@ -334,6 +351,31 @@ namespace vk {
 
   void wait_for_previous_frame( engine_data* e ) {
     VkResult vkr = vkQueueWaitIdle( e->m_queue );
+    vkassert( vkr );
+  }
+  
+  void init_device_memory_pool( engine_data* e, uint64_t size ){
+
+    VkMemoryAllocateInfo mem_alloc = {};
+    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mem_alloc.pNext = nullptr;
+    mem_alloc.allocationSize = size;
+    mem_alloc.memoryTypeIndex = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+    VkResult vkr = vkAllocateMemory( e->m_device, &mem_alloc, nullptr, &e->m_device_pool_memory );
+    vkassert( vkr );
+
+  }
+
+  void init_host_memory_pool( engine_data* e, uint64_t size ) {
+
+    VkMemoryAllocateInfo mem_alloc = {};
+    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mem_alloc.pNext = nullptr;
+    mem_alloc.allocationSize = size;
+    mem_alloc.memoryTypeIndex = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+
+    VkResult vkr = vkAllocateMemory( e->m_device, &mem_alloc, nullptr, &e->m_host_pool_memory );
     vkassert( vkr );
   }
 

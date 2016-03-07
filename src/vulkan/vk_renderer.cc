@@ -6,8 +6,6 @@
 #include <vulkan/vulkandebug.h>
 #include <vulkan/vulkantools.h>
 
-using namespace kretash;
-
 namespace vk {
 
   void create_srv_view_heap( engine_data* e, renderer_data* r, int32_t size ) {
@@ -17,32 +15,32 @@ namespace vk {
   void create_root_signature( renderer_data* r ) {
 
     r->m_binding_descriptions.resize( 1 );
-    r->m_binding_descriptions[0].binding = VERTEX_BUFFER_BIND_ID;
+    r->m_binding_descriptions[0].binding = 0;
     r->m_binding_descriptions[0].stride = sizeof( float ) * m_stride;
     r->m_binding_descriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     r->m_attribute_descriptions.resize( 5 );
-    r->m_attribute_descriptions[0].binding = VERTEX_BUFFER_BIND_ID;
+    r->m_attribute_descriptions[0].binding = 0;
     r->m_attribute_descriptions[0].location = 0;
     r->m_attribute_descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
     r->m_attribute_descriptions[0].offset = 0;
 
-    r->m_attribute_descriptions[1].binding = VERTEX_BUFFER_BIND_ID;
+    r->m_attribute_descriptions[1].binding = 0;
     r->m_attribute_descriptions[1].location = 1;
     r->m_attribute_descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
     r->m_attribute_descriptions[1].offset = sizeof( float ) * 3;
 
-    r->m_attribute_descriptions[2].binding = VERTEX_BUFFER_BIND_ID;
+    r->m_attribute_descriptions[2].binding = 0;
     r->m_attribute_descriptions[2].location = 2;
     r->m_attribute_descriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
     r->m_attribute_descriptions[2].offset = sizeof( float ) * 6;
 
-    r->m_attribute_descriptions[3].binding = VERTEX_BUFFER_BIND_ID;
+    r->m_attribute_descriptions[3].binding = 0;
     r->m_attribute_descriptions[3].location = 3;
     r->m_attribute_descriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
     r->m_attribute_descriptions[3].offset = sizeof( float ) * 8;
 
-    r->m_attribute_descriptions[4].binding = VERTEX_BUFFER_BIND_ID;
+    r->m_attribute_descriptions[4].binding = 0;
     r->m_attribute_descriptions[4].location = 4;
     r->m_attribute_descriptions[4].format = VK_FORMAT_R32G32B32_SFLOAT;
     r->m_attribute_descriptions[4].offset = sizeof( float ) * 11;

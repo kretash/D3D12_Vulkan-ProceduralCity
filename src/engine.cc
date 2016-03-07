@@ -14,6 +14,10 @@
 #include "core/input.hh"
 #include "core/world.hh"
 
+#if __VULKAN__
+#include "core/vk_pool.hh"
+#endif
+
 Engine* Engine::m_instance = nullptr;
 
 Engine::Engine() :
@@ -78,6 +82,15 @@ void Engine::init() {
   GPU::create_pipeline_cache( &m_e_data );
   GPU::setup_framebuffer( &m_e_data, k_engine->get_window() );
   GPU::flush_setup_command_buffer( &m_e_data );
+
+  m_vk_device_pool = std::make_shared<VKPool>();
+  m_vk_device_pool->init( ( uint64_t ) 1024 * ( uint64_t ) 512 * ( uint64_t ) 4 * ( uint64_t ) 550, kDEVICE_MEMORY );
+  GPU::init_device_memory_pool( &m_e_data, ( uint64_t ) 1024 * ( uint64_t ) 512 * ( uint64_t ) 4 * ( uint64_t ) 550 );
+
+  m_vk_host_pool = std::make_shared<VKPool>();
+  m_vk_host_pool->init( ( uint64_t ) 1024 * ( uint64_t ) 512 * ( uint64_t ) 4 * ( uint64_t ) 32, kHOST_VISIBLE );
+  GPU::init_host_memory_pool( &m_e_data, ( uint64_t ) 1024 * ( uint64_t ) 512 * ( uint64_t ) 4 * ( uint64_t ) 32 );
+
 #endif
 
 }
@@ -86,6 +99,8 @@ void Engine::prepare() {
 
   GPU::init_descriptor_pool_and_layout( &m_e_data );
   m_world->init();
+
+  m_texture_manager->prepare();
 
   for( int type = rBASIC; type < rCOUNT; ++type ) {
     if( m_renderers[type] != nullptr )
@@ -96,7 +111,6 @@ void Engine::prepare() {
   if( k_engine_settings->get_settings().play_sound )
     m_sound->play_sound( k_engine_settings->get_settings().sound_file );
 
-  m_texture_manager->prepare();
 }
 
 void Engine::update() {
@@ -119,6 +133,7 @@ void Engine::update() {
 }
 
 void Engine::reset_cmd_list() {
+  m_texture_manager->synch();
   k_engine_settings->start_render();
   GPU::reset_render_command_list( &m_e_data, m_window.get() );
 }
@@ -183,7 +198,6 @@ void Engine::render_post( Renderer* r ) {
 
 void Engine::execute_and_swap( Renderer* r ) {
 
-  m_texture_manager->synch();
   //k_start_print_timer( "Upload" );
   m_gpu_pool->synch();
   //k_end_print_timer( "Upload" );
@@ -216,6 +230,10 @@ GPU_pool*       Engine::get_GPU_pool() { return m_gpu_pool.get(); }
 TextureManager* Engine::get_texture_manager() { return m_texture_manager.get(); }
 Sound*          Engine::get_sound() { return m_sound.get(); }
 Input*          Engine::get_input() { return m_input.get(); }
+#if __VULKAN__
+VKPool*          Engine::get_vk_device_pool() { return m_vk_device_pool.get(); }
+VKPool*          Engine::get_vk_host_pool() { return m_vk_host_pool.get(); }
+#endif
 
 
 void Engine::set_renderer( Renderer* r ) {

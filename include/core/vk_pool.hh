@@ -14,27 +14,35 @@ in compliance with the License. You may obtain a copy of the License at
 http://opensource.org/licenses/MIT
 */
 
-#if 0
-  #undef __DIRECTX12__
-  #define GPU vk
-  #define __VULKAN__ 1
-#else
-  #define __DIRECTX12__ 1
-  #define GPU dx
-  #undef __VULKAN__
-#endif
+#pragma once
 
-#define PI 3.14159265358979323846264338f
+#include "core.hh"
 
-#include <stdint.h>
+#ifdef __VULKAN__
 
-#if CHECK_MEM
-#ifdef _DEBUG
-#define __KRETASH_MOD__ 1
-#define _CRTDBG_MAP_ALLOC
-#include<iostream>
-#include <crtdbg.h>
-#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
-#define new DEBUG_NEW
-#endif
+#include <vector>
+
+struct                              mem_block;
+
+enum pool_type{
+  kDEVICE_MEMORY = 0,
+  kHOST_VISIBLE = 1,
+};
+
+class VKPool{
+public:
+  VKPool();
+  ~VKPool();
+
+  void                              init( uint64_t size, pool_type t );
+  mem_block                         get_mem( uint64_t size );
+  void                              release( mem_block m );
+  void                              defrag();
+
+private:
+  pool_type                         m_pool_type;
+  std::vector<mem_block>            m_free_memory;
+  std::vector<mem_block>            m_used_memory;
+};
+
 #endif

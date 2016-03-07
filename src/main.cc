@@ -49,28 +49,28 @@ int main( int argc, char **argv ) {
   sky->init();
 
 #if TEST_OBJ
-  std::shared_ptr<Geometry> geometry = std::make_shared<Geometry>();
-  geometry->load( "plane.obj" );
-  std::shared_ptr<Drawable> drawable = std::make_shared<Drawable>();
-  drawable->init( geometry.get() );
-  drawable->set_ignore_frustum();
-  drawable->get_texture()->load( tDIFFUSE, "chair_d.png" );
-  drawable->get_texture()->load( tNORMAL, "chair_n.png" );
-  drawable->get_texture()->load( tSPECULAR, "chair_s.png" );
-  ren->add_child( drawable.get() );
+  //std::shared_ptr<Geometry> geometry = std::make_shared<Geometry>();
+  //geometry->load( "plane.obj" );
+  //std::shared_ptr<Drawable> drawable = std::make_shared<Drawable>();
+  //drawable->init( geometry.get() );
+  //drawable->set_ignore_frustum();
+  //drawable->get_texture()->load( tDIFFUSE, "marble_d.png" );
+  //drawable->get_texture()->load( tNORMAL, "marble_n.png" );
+  //drawable->get_texture()->load( tSPECULAR, "marble_s.png" );
+  //ren->add_child( drawable.get() );
 
   std::shared_ptr<Geometry> teapot = std::make_shared<Geometry>();
   teapot->load( "teapot.obj" );
 
   std::vector<std::shared_ptr<Drawable>> teapots;
 
-  for( int32_t i = 0; i < 4; ++i ) {
+  for( int32_t i = 0; i < 1; ++i ) {
     std::shared_ptr<Drawable> tea = std::make_shared<Drawable>();
     tea->init( teapot.get() );
     tea->set_ignore_frustum();
-    tea->get_texture()->load( tDIFFUSE, "marble_d.png" );
-    tea->get_texture()->load( tNORMAL, "marble_n.png" );
-    tea->get_texture()->load( tSPECULAR, "marble_s.png" );
+    tea->get_texture()->load( tDIFFUSE, "chair_d.png" );
+    tea->get_texture()->load( tNORMAL, "chair_n.png" );
+    tea->get_texture()->load( tSPECULAR, "chair_s.png" );
     tea->set_position( sinf( ( ( float ) i / 4.0f )*2.0f*PI )*5.0f, 0.0f, cosf( ( ( float ) i / 4.0f )*2.0f*PI )*5.0f );
     ren->add_child( tea.get() );
     teapots.push_back( tea );

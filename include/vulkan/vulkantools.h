@@ -29,8 +29,14 @@
 // todo : remove if added to SDK
 #define VK_FLAGS_NONE 0
 
+#if DEBUG
+#define vkassert kretash::_vkassert
+#else
+#define vkassert 
+#endif
+
 namespace kretash{
-  void vkassert( VkResult r );
+  void _vkassert( VkResult r );
 }
 
 namespace vkTools

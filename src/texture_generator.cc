@@ -111,10 +111,8 @@ void TextureGenerator::gather_texture( Texture* desc ) {
     std::cout << std::endl;
   }
 
-
-  //SDL test project should be able to remove D3D12 code
 #if 1
-  //desc->clear();
+  desc->clear();
 
   int32_t texture_start = tDIFFUSE;
   int32_t texture_end = tCOUNT;
@@ -129,7 +127,7 @@ void TextureGenerator::gather_texture( Texture* desc ) {
       desc->get_texture_data( tt ),
       desc->get_texture_pointer( tt ), w, h, c );
 
-    GPU::create_shader_resource_view( k_engine->get_renderer( rTEXTURE )->get_render_data(),
+    GPU::create_shader_resource_view( k_engine->get_engine_data(), k_engine->get_renderer( rTEXTURE )->get_render_data(),
       desc->get_texture_data( tt ), desc->m_future_texture_id[e] );
 
   }

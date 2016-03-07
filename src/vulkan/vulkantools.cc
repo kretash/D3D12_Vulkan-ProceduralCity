@@ -12,8 +12,9 @@
 #include "vulkanandroid.h"
 #endif
 
+
 namespace kretash {
-  void vkassert( VkResult r ){
+  void _vkassert( VkResult r ){
 
     if( r != VK_SUCCESS )
       MessageBox( NULL, vkTools::errorString( r ).c_str(), "Vulkan Error" , MB_OK | MB_ICONERROR );

@@ -7,12 +7,12 @@
 #include "core/drawable.hh"
 #include "core/renderer.hh"
 #include "stb/stb_image.h"
+#include "core/vk_pool.hh"
 
 #include <algorithm>
 #include <cassert>
 
-#define CLEAR_TEXTURE_UPLOAD 0
-#define MAX_TEXTURED_DRAWABLES 1024
+#define MAX_TEXTURED_DRAWABLES 512
 #define MAX_TEXTURES MAX_TEXTURED_DRAWABLES * 3 + 16
 
 #define MAX_UPLOAD_TEXTURES 8
@@ -24,7 +24,6 @@
 #define LOD_1_THRESHOLD 250.0f
 #define LOD_2_THRESHOLD 350.0f
 #define LOD_3_THRESHOLD 550.0f
-
 
 TextureManager::TextureManager() {
   m_texture_generator = std::make_shared<TextureGenerator>();
@@ -74,6 +73,8 @@ void TextureManager::prepare() {
         unsigned char* image = stbi_load( path.c_str(),
           c_t->get_width_ref( tt ), c_t->get_height_ref( tt ), c_t->get_channels_ref( tt ), 4 );
 
+        assert( image != nullptr && "IMAGE NOT FOUND" );
+
         c_t->new_texture( tt );
         c_t->copy_data( tt, image );
         stbi_image_free( image );
@@ -90,7 +91,7 @@ void TextureManager::prepare() {
         int32_t offset = *id_begin._Ptr;
         m_free_ids.erase( id_begin );
 
-        GPU::create_shader_resource_view( k_engine->get_renderer( rTEXTURE )->get_render_data(),
+        GPU::create_shader_resource_view( k_engine->get_engine_data(), k_engine->get_renderer( rTEXTURE )->get_render_data(),
           c_t->get_texture_data( tt ), offset );
 
         c_t->set_id( tt, offset );
@@ -112,15 +113,6 @@ void TextureManager::prepare() {
 
   GPU::compute_texture_upload( k_engine->get_engine_data() );
   GPU::wait_for_texture_upload( k_engine->get_engine_data() );
-
-#if CLEAR_TEXTURE_UPLOAD
-  for( int i = 0; i < m_drawables.size(); ++i ) {
-    for( int type = tDIFFUSE; type < tCOUNT; ++type ) {
-      texture_t tt = static_cast< texture_t >( type );
-      GPU::clear_texture_upload( m_drawables[i]->get_texture()->get_texture_data( tt ) );
-    }
-  }
-#endif
 
   m_placeholder_texture->delete_texture( tDIFFUSE );
   m_placeholder_texture->delete_texture( tNORMAL );
@@ -163,6 +155,12 @@ void TextureManager::update() { //1.2562
     m_clean_up_textures[i]->delete_texture( tSPECULAR );
   }
 
+  if( m_clean_up_textures.size() != 0 ) {
+#if __VULKAN__
+    k_engine->get_vk_host_pool()->defrag();
+#endif
+  }
+
   m_clean_up_textures.clear();
 
   if( !update_current_textures ) {
@@ -175,7 +173,7 @@ void TextureManager::update() { //1.2562
 
     _look_for_upgrade_textures();//0.0061308
 
-    if( m_free_ids.size() < 32 ) {
+    if( m_free_ids.size() < 128 ) {
       _clear_deprecated_textures(); // 0.027926
     }
   }
@@ -354,13 +352,24 @@ void TextureManager::_clear_deprecated_textures() {
   auto i = m_textured_drawables.begin();
   while( i != m_textured_drawables.end() ) {
 
-    if( ( *i._Ptr )->get_active() &&
-      ( *i._Ptr )->get_texture()->get_LOD() != 3 ) break;
+    if( ( *i._Ptr )->get_active()
+      && ( *i._Ptr )->get_texture()->get_LOD() != 3 ) break;
+
+    GPU::clear_descriptor_set( k_engine->get_engine_data(), m_placeholder_texture->get_texture_data( tDIFFUSE ),
+      ( *i._Ptr )->get_texture()->get_id( tDIFFUSE ) );
+
+    GPU::clear_descriptor_set( k_engine->get_engine_data(), m_placeholder_texture->get_texture_data( tNORMAL ),
+      ( *i._Ptr )->get_texture()->get_id( tNORMAL ) );
+
+    GPU::clear_descriptor_set( k_engine->get_engine_data(), m_placeholder_texture->get_texture_data( tSPECULAR ),
+      ( *i._Ptr )->get_texture()->get_id( tSPECULAR ) );
 
     ( *i._Ptr )->get_texture()->clear();
+
     m_free_ids.push_back( ( *i._Ptr )->get_texture()->get_id( tDIFFUSE ) );
     m_free_ids.push_back( ( *i._Ptr )->get_texture()->get_id( tNORMAL ) );
     m_free_ids.push_back( ( *i._Ptr )->get_texture()->get_id( tSPECULAR ) );
+
 
     ( *i._Ptr )->get_texture()->set_placeholder(
       m_placeholder_texture->get_id( tDIFFUSE ),
@@ -374,6 +383,10 @@ void TextureManager::_clear_deprecated_textures() {
     if( cleared == MAX_CLEAR_TEXTURES ) break;
 
   }
+
+#if __VULKAN__
+  k_engine->get_vk_device_pool()->defrag();
+#endif
 }
 
 int32_t TextureManager::_get_new_id() {

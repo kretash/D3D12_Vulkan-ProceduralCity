@@ -1,11 +1,11 @@
 #include "core/k_vulkan.hh"
+
+#ifdef __VULKAN__
+
 #include "vulkan/vulkan.h"
 #include "vulkan/vulkantools.h"
 #include "core/GPU_pool.hh"
 #include "core/types.hh"
-#ifdef __VULKAN__
-
-using namespace kretash;
 
 namespace vk {
 

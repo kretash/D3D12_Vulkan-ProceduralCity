@@ -50,13 +50,16 @@ struct engine_data {
   VkInstance                                      m_instance;
   VkPhysicalDevice                                m_physical_device;
   VkPhysicalDeviceMemoryProperties                m_device_memory_properties;
-  uint32_t                                        m_graphics_queue_index;
   VkDevice                                        m_device;
+  uint32_t                                        m_graphics_queue_index;
   VkQueue                                         m_queue;
+  uint32_t                                        m_transfer_queue_index;
+  VkQueue                                         m_texture_queue;
   VulkanSwapChain                                 m_swap_chain;
   VkFormat                                        m_depth_format;
   VkCommandPool                                   m_command_pool;
   VkCommandBuffer                                 m_setup_command_buffer;
+  VkCommandBuffer                                 m_texture_command_buffer;
   VkCommandBuffer                                 m_post_present_command_buffer;
   std::vector<VkCommandBuffer>                    m_draw_command_buffers;
   depth_stencil                                   m_depth_stencil;
@@ -67,11 +70,15 @@ struct engine_data {
   std::vector<VkShaderModule>                     m_shader_modules;
   VkDescriptorSetLayout                           m_descriptor_set_layout;
   VkDescriptorSetLayout                           m_descriptor_set_layout2;
+  VkDescriptorSet                                 m_constant_descriptor_set;
   VkDescriptorPool                                m_descriptor_pool;
   VkPipelineLayout                                m_pipeline_layout;
+  VkDeviceMemory                                  m_device_pool_memory;
+  VkDeviceMemory                                  m_host_pool_memory;
 
   engine_data() :
     m_setup_command_buffer( VK_NULL_HANDLE ),
+    m_texture_command_buffer( VK_NULL_HANDLE ),
     m_graphics_queue_index( 0 ),
     m_current_buffer( 0 ) {
   }
@@ -95,7 +102,6 @@ struct constant_buffer_data {
   VkBuffer                                        m_buffer;
   VkDeviceMemory                                  m_memory;
   VkDescriptorBufferInfo                          m_descriptor;
-  VkDescriptorSet                                 m_descriptor_set;
 };
 
 struct instance_buffer {
@@ -147,12 +153,15 @@ struct geometry_data {
 struct texture_data {
   VkSampler                                       m_sampler;
   VkImage                                         m_image;
+  VkImage                                         m_mappable_image;
   VkImageLayout                                   m_image_layout;
-  VkDeviceMemory                                  m_device_memory;
   VkImageView                                     m_view;
   uint32_t                                        m_width;
   uint32_t                                        m_height;
   uint32_t                                        m_mip_levels;
+
+  mem_block                                       m_mappable_mem_block;
+  mem_block                                       m_image_mem_block;
 };
 
 struct drawable_data {
@@ -162,9 +171,8 @@ struct drawable_data {
 
 };
 
-#define ENABLE_VALIDATION true
+#define ENABLE_VALIDATION false
 #define VK_FLAGS_NONE 0
-#define VERTEX_BUFFER_BIND_ID 0
 
 namespace vk {
 
@@ -181,15 +189,17 @@ namespace vk {
   void setup_framebuffer( engine_data* e, Window* w );
   void flush_setup_command_buffer( engine_data* e );
   void wait_for_previous_frame( engine_data* e );
+  void init_device_memory_pool( engine_data* e, uint64_t size );
+  void init_host_memory_pool( engine_data* e, uint64_t size );
   VkBool32 _get_memory_type( engine_data* e, uint32_t typeBits, VkFlags properties, uint32_t * typeIndex );
 
   //buffer
   void create_empty_vertex_buffer( engine_data* e, geometry_data* g, uint32_t size );
   void create_empty_index_buffer( engine_data* e, geometry_data* g, uint32_t size );
-  void upload_into_vertex_buffer( engine_data* e, geometry_data* g, uint32_t offset, float* array_data, 
+  void upload_into_vertex_buffer( engine_data* e, geometry_data* g, uint32_t offset, float* array_data,
     uint32_t size );
   void upload_queue_into_vertex_buffer( engine_data* e, geometry_data* g, std::vector<queue>* queue );
-  void upload_into_index_buffer( engine_data* e, geometry_data* g, uint32_t offset, uint32_t* elements_data, 
+  void upload_into_index_buffer( engine_data* e, geometry_data* g, uint32_t offset, uint32_t* elements_data,
     uint32_t size );
   void upload_queue_into_index_buffer( engine_data* e, geometry_data* g, std::vector<queue>* queue );
 
@@ -206,13 +216,14 @@ namespace vk {
   void post_render( engine_data* e, renderer_data* r, Window* w );
 
   //texture
-  void reset_texture_command_list( engine_data* d );
-  void create_texture( engine_data* d, texture_data* t, void* data, int32_t width, int32_t height, int32_t channels );
-  void create_shader_resource_view( renderer_data* r, texture_data* t, int32_t offset );
-  void compute_texture_upload( engine_data* d );
-  void wait_for_texture_upload( engine_data* d );
-  void clear_texture_upload( texture_data* t );
-  void clear_texture( texture_data* t );
+  void reset_texture_command_list( engine_data* e );
+  void create_texture( engine_data* e, texture_data* t, void* data, int32_t width, int32_t height, int32_t channels );
+  void create_shader_resource_view( engine_data* e, renderer_data* r, texture_data* t, int32_t offset );
+  void compute_texture_upload( engine_data* e );
+  void wait_for_texture_upload( engine_data* e );
+  void clear_texture_upload( engine_data* e, texture_data* t );
+  void clear_texture( engine_data* e, texture_data* t );
+  void clear_descriptor_set( engine_data* e, texture_data* pt, uint32_t offset );
 
   //drawable
   void init_descriptor_pool_and_layout( engine_data* e );
@@ -221,7 +232,7 @@ namespace vk {
   void create_instance_buffer_object( engine_data* e, renderer_data* r, instance_buffer* ub );
   void create_instance_buffer_view( engine_data* e, renderer_data* r, drawable_data* d, uint64_t buffer_offset, int32_t cbv_offset );
   void update_instance_buffer_object( engine_data* e, renderer_data* r, instance_buffer* ub );
-  void create_and_update_descriptor_sets( engine_data* e, renderer_data* r, std::vector<Drawable*>* draw);
+  void create_and_update_descriptor_sets( engine_data* e, renderer_data* r, std::vector<Drawable*>* draw );
   void update_decriptor_sets( engine_data* e, renderer_data* r, std::vector<Drawable*>* draw );
 
   //render

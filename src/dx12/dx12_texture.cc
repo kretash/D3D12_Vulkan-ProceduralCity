@@ -66,7 +66,7 @@ namespace dx {
       D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE ) );
   }
 
-  void create_shader_resource_view( renderer_data* r, texture_data* t, int32_t offset ) {
+  void create_shader_resource_view( engine_data* d, renderer_data* r, texture_data* t, int32_t offset ) {
     D3D12_SHADER_RESOURCE_VIEW_DESC diffuseSrvDesc = {};
     diffuseSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     diffuseSrvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -125,14 +125,17 @@ namespace dx {
     }
   }
 
-  void clear_texture_upload( texture_data* t ) {
+  void clear_texture_upload( engine_data* d, texture_data* t ) {
     t->m_texture_upload = nullptr;
   }
 
-  void clear_texture( texture_data* t ) {
+  void clear_texture( engine_data* d, texture_data* t ) {
     t->m_texture = nullptr;
   }
 
+  void clear_descriptor_set( engine_data* e, texture_data* pt, uint32_t offset ) {
+  
+  }
 }
 
 #endif

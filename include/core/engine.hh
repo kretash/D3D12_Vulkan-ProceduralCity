@@ -31,6 +31,9 @@ class                             GPU_pool;
 class                             TextureManager;
 class                             Sound;
 class                             Input;
+#if __VULKAN__
+class                             VKPool;
+#endif
 
 class                             Engine : public Base {
 public:
@@ -71,6 +74,11 @@ public:
   int32_t                         get_total_drawables();
   int32_t                         new_id();
 
+#if __VULKAN__
+  VKPool*                         get_vk_device_pool();
+  VKPool*                         get_vk_host_pool();
+#endif
+
   void                            set_renderer( Renderer* r );
   bool                            has_renderer( render_type t );
   Renderer*                       get_renderer( render_type t );
@@ -89,6 +97,10 @@ private:
   std::shared_ptr<TextureManager> m_texture_manager;
   std::shared_ptr<Sound>          m_sound;
   std::shared_ptr<Input>          m_input;
+#if __VULKAN__
+  std::shared_ptr<VKPool>         m_vk_device_pool;
+  std::shared_ptr<VKPool>         m_vk_host_pool;
+#endif
   Renderer*                       m_renderers[rCOUNT];
 
   bool                            m_is_running;

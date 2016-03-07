@@ -15,7 +15,7 @@ layout (set = 0, binding = 0) uniform UBO1
   uint s_texture_id;
 
   uint pad[13];
-} istance;
+} instance;
 
 layout (set = 1, binding = 0) uniform UBO2
 {

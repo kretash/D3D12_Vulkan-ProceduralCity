@@ -11,8 +11,6 @@
 #include "vulkan/vulkantools.h"
 #include "vulkan/vulkandebug.h"
 
-using namespace kretash;
-
 namespace vk {
 
   void reset_render_command_list( engine_data* e, Window* w ) {
@@ -45,6 +43,8 @@ namespace vk {
     vkassert( vkr );
 
     vkCmdBeginRenderPass( e->m_draw_command_buffers[cb], &render_pass_beging_info, VK_SUBPASS_CONTENTS_INLINE );
+
+
   }
 
   void clear_color( engine_data* e, Window* w ) {
@@ -80,12 +80,12 @@ namespace vk {
 
 
     VkDeviceSize offsets[1] = { 0 };
-    vkCmdBindVertexBuffers( e->m_draw_command_buffers[cb], VERTEX_BUFFER_BIND_ID, 1, &g_data->m_v_buf, offsets );
+    vkCmdBindVertexBuffers( e->m_draw_command_buffers[cb], 0, 1, &g_data->m_v_buf, offsets );
 
     vkCmdBindIndexBuffer( e->m_draw_command_buffers[cb], g_data->m_i_buf, 0, VK_INDEX_TYPE_UINT32 );
 
     VkDescriptorSet ds[2] = {};
-    ds[1] = k_engine->get_world()->get_buffer_data()->m_descriptor_set;
+    ds[1] = e->m_constant_descriptor_set;
 
     //not the classiest way to do it
     //vkCmdBindDescriptorSets( e->m_draw_command_buffers[cb], VK_PIPELINE_BIND_POINT_GRAPHICS, e->m_pipeline_layout,

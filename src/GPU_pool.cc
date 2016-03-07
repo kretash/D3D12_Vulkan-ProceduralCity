@@ -266,6 +266,17 @@ void GPU_pool::_thread() {
 
       GPU::upload_queue_into_vertex_buffer( k_engine->get_engine_data(), g_data.get(), &m_upload_queue );
       GPU::upload_queue_into_index_buffer( k_engine->get_engine_data(), g_data.get(), &m_upload_queue );
+      
+#if 0 // This is no longer done here
+      std::vector<queue>::iterator i = m_upload_queue.begin();
+      while( i != m_upload_queue.end() ) {
+        delete[] i->v_data;
+        delete[] i->i_data;
+        i->v_data = nullptr;
+        i->i_data = nullptr;
+        i = m_upload_queue.erase( i );
+      }
+#endif
       m_upload_queue.clear();
 
       m_queue_mutex.unlock();

@@ -5,11 +5,13 @@
 #include "core/engine.hh"
 #include "core/drawable.hh"
 #include "vulkan/vulkantools.h"
-using namespace kretash;
 
 namespace vk {
 
   void init_descriptor_pool_and_layout( engine_data* e ) {
+
+    const int32_t max_textures = 2048;
+
     VkDescriptorSetLayoutBinding layout_binding[2] = {};
     layout_binding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     layout_binding[0].descriptorCount = 1;
@@ -17,26 +19,29 @@ namespace vk {
     layout_binding[0].pImmutableSamplers = nullptr;
     layout_binding[0].binding = 0;
 
-    layout_binding[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    layout_binding[1].descriptorCount = 1;
+    layout_binding[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    layout_binding[1].descriptorCount = max_textures;
     layout_binding[1].stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
     layout_binding[1].pImmutableSamplers = nullptr;
-    layout_binding[1].binding = 0;
+    layout_binding[1].binding = 1;
 
     VkDescriptorSetLayoutCreateInfo descriptor_layout = {};
     descriptor_layout.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descriptor_layout.pNext = nullptr;
-    descriptor_layout.bindingCount = 1;
     descriptor_layout.pBindings = &layout_binding[0];
 
+    //Instance buffer
+    descriptor_layout.bindingCount = 1;
     VkResult vkr = vkCreateDescriptorSetLayout( e->m_device, &descriptor_layout, nullptr, &e->m_descriptor_set_layout );
     vkassert( vkr );
 
-    descriptor_layout.pBindings = &layout_binding[1];
+    //Scene buffer
+    descriptor_layout.bindingCount = 2;
     vkr = vkCreateDescriptorSetLayout( e->m_device, &descriptor_layout, nullptr, &e->m_descriptor_set_layout2 );
     vkassert( vkr );
 
-    VkDescriptorSetLayout* dsl[2] = { &e->m_descriptor_set_layout, &e->m_descriptor_set_layout2 };
+    VkDescriptorSetLayout* dsl[2] = { &e->m_descriptor_set_layout,
+                                      &e->m_descriptor_set_layout2 };
 
     VkPipelineLayoutCreateInfo pipeline_layout_create = {};
     pipeline_layout_create.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -47,16 +52,18 @@ namespace vk {
     vkr = vkCreatePipelineLayout( e->m_device, &pipeline_layout_create, nullptr, &e->m_pipeline_layout );
     vkassert( vkr );
 
-    VkDescriptorPoolSize type_counts[1];
+    VkDescriptorPoolSize type_counts[2];
     type_counts[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    type_counts[0].descriptorCount = 2;
+    type_counts[0].descriptorCount = 1;
+    type_counts[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    type_counts[1].descriptorCount = 1;
 
     VkDescriptorPoolCreateInfo descriptor_pool_info = {};
     descriptor_pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptor_pool_info.pNext = nullptr;
-    descriptor_pool_info.poolSizeCount = 1;
+    descriptor_pool_info.poolSizeCount = 2;
     descriptor_pool_info.pPoolSizes = type_counts;
-    descriptor_pool_info.maxSets = k_engine->get_total_drawables() + 16;
+    descriptor_pool_info.maxSets = k_engine->get_total_drawables() + max_textures + 16;
 
     vkr = vkCreateDescriptorPool( e->m_device, &descriptor_pool_info, nullptr, &e->m_descriptor_pool );
     vkassert( vkr );
@@ -69,9 +76,9 @@ namespace vk {
       alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
       alloc_info.descriptorPool = e->m_descriptor_pool;
       alloc_info.descriptorSetCount = 1;
-      alloc_info.pSetLayouts = &e->m_descriptor_set_layout;
+      alloc_info.pSetLayouts = &e->m_descriptor_set_layout2;
 
-      VkResult vkr = vkAllocateDescriptorSets( e->m_device, &alloc_info, &cbd->m_descriptor_set );
+      VkResult vkr = vkAllocateDescriptorSets( e->m_device, &alloc_info, &e->m_constant_descriptor_set );
       vkassert( vkr );
     }
 
@@ -107,7 +114,7 @@ namespace vk {
 
     VkWriteDescriptorSet write_descriptor_set = {};
     write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write_descriptor_set.dstSet = cbd->m_descriptor_set;
+    write_descriptor_set.dstSet = e->m_constant_descriptor_set;
     write_descriptor_set.descriptorCount = 1;
     write_descriptor_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     write_descriptor_set.pBufferInfo = &cbd->m_descriptor;
@@ -207,6 +214,7 @@ namespace vk {
       write_descriptor_set.dstBinding = 0;
 
       desc.push_back( write_descriptor_set );
+      
     }
 
     vkUpdateDescriptorSets( e->m_device, ( uint32_t ) desc.size(), &desc[0], 0, nullptr );

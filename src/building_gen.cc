@@ -468,7 +468,8 @@ void BuildingGen::_generate_sizes_5( float* sizes_array, uint32_t sides ) {
 
 
 BuildingGen::~BuildingGen() {
-
+  if( m_vertex_buffer != nullptr ) delete[] m_vertex_buffer;
+  if( m_elem_buffer != nullptr ) delete[] m_elem_buffer;
 }
 
 const float BuildingGen::pattern_set_5[5][5] =
