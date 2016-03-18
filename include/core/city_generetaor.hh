@@ -23,54 +23,58 @@ http://opensource.org/licenses/MIT
 #include <queue>
 #include <map>
 
-class Renderer;
-class Building;
-class Drawable;
-class Geometry;
-class Texture;
+namespace kretash {
 
-class                                         CityGenerator {
-public:
+  class Renderer;
+  class Building;
+  class Drawable;
+  class Geometry;
+  class Texture;
 
-  CityGenerator();
-  ~CityGenerator();
+  class                                         CityGenerator {
+  public:
 
-  void                                        generate( std::shared_ptr<Renderer> ren );
-  void                                        update();
-private:
+    CityGenerator();
+    ~CityGenerator();
 
-  void                                        _prepare_vectors();
-  void                                        _generate_move_buildings();
-  void                                        _apply_move_buildings( uint32_t count );
+    void                                        regenerate();
+    void                                        generate( std::shared_ptr<Renderer> ren );
+    void                                        update();
+  private:
 
-  void                                        _apply_carry_to_outline( building_details outline );
+    void                                        _prepare_vectors();
+    void                                        _generate_move_buildings();
+    void                                        _apply_move_buildings( uint32_t count );
 
-  outline_type                                _oposite( outline_type s );
+    void                                        _apply_carry_to_outline( building_details outline );
 
-  //threaded function
-  void _generate_loop();
-  std::vector<Building*>                      m_to_generate;
-  std::mutex                                  m_to_generate_lock;
-  std::vector<Building*>                      m_to_upload;
-  std::mutex                                  m_to_upload_lock;
-  std::vector<std::thread>                    m_threads;
-  std::atomic_bool                            m_exit_threads;
+    outline_type                                _oposite( outline_type s );
 
-  int32_t                                     m_count;
-  int32_t                                     m_grid;
-  int32_t                                     m_half_grid;
-  float                                       m_scale;
-  float                                       m_max_radius;
+    //threaded function
+    void _generate_loop();
+    std::vector<Building*>                      m_to_generate;
+    std::mutex                                  m_to_generate_lock;
+    std::vector<Building*>                      m_to_upload;
+    std::mutex                                  m_to_upload_lock;
+    std::vector<std::thread>                    m_threads;
+    std::atomic_bool                            m_exit_threads;
 
-  std::vector<std::shared_ptr<Building>>      m_buildigs;
-  std::vector<std::shared_ptr<Drawable>>      m_street_block_D;
-  std::shared_ptr<Renderer>                   m_renderer;
-  std::shared_ptr<Building>                   m_placeholder_building;
-  std::shared_ptr<Texture>                    m_texture;
-  std::shared_ptr<Geometry>                   m_street_block;
+    int32_t                                     m_count;
+    int32_t                                     m_grid;
+    int32_t                                     m_half_grid;
+    float                                       m_scale;
+    float                                       m_max_radius;
 
-  std::map<int32_t, float3>                   m_building_positions;
-  std::vector<building_details>               m_all_buildings;
-  std::vector<building_details>               m_outline_positions;
-  std::vector<move_operation>                 m_move_operations;
-};
+    std::vector<std::shared_ptr<Building>>      m_buildigs;
+    std::vector<std::shared_ptr<Drawable>>      m_street_block_D;
+    std::shared_ptr<Renderer>                   m_renderer;
+    std::shared_ptr<Building>                   m_placeholder_building;
+    std::shared_ptr<Texture>                    m_texture;
+    std::shared_ptr<Geometry>                   m_street_block;
+
+    std::map<int32_t, float3>                   m_building_positions;
+    std::vector<building_details>               m_all_buildings;
+    std::vector<building_details>               m_outline_positions;
+    std::vector<move_operation>                 m_move_operations;
+  };
+}

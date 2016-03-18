@@ -14,16 +14,6 @@ in compliance with the License. You may obtain a copy of the License at
 http://opensource.org/licenses/MIT
 */
 
-#if 0
-  #undef __DIRECTX12__
-  #define GPU vk
-  #define __VULKAN__ 1
-#else
-  #define __DIRECTX12__ 1
-  #define GPU dx
-  #undef __VULKAN__
-#endif
-
 #define PI 3.14159265358979323846264338f
 
 #include <stdint.h>

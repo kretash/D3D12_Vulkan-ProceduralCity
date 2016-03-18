@@ -21,26 +21,30 @@ http://opensource.org/licenses/MIT
 #include "engine.hh"
 #include "render_manager.hh"
 
-class                       Renderer : public Base {
-public:
-  Renderer();
-  ~Renderer();
+namespace kretash {
+  class                       xxRenderer;
+  class                       Renderer : public Base {
+  public:
+    Renderer();
+    ~Renderer();
 
-  void                            prepare();
-  void                            update();
-  void                            create( render_type t );
-  void                            add_child( Drawable* d );
+    void                            prepare();
+    void                            update();
+    void                            create( render_type t );
+    void                            add_child( Drawable* d );
+    void                            reload();
 
-  std::vector<Drawable*>*         get_render_bin() { return m_render_manager->get_active_render_bin(); }
-  int                             get_render_bin_size() { return m_render_manager->get_active_render_bin_size(); }
-  renderer_data*                  get_render_data() { return &r_data; }
-  render_type                     get_renderer_type(){ return m_render_type; }
-  
-private:
-  renderer_data                   r_data;
-  render_type                     m_render_type;
-  int32_t                         m_render_bin_objects;
-  int32_t                         m_cbv_srv_offset;
-  std::vector<instance_buffer>    m_instance_buffer;
-  RenderManager*                  m_render_manager;
-};
+    std::vector<Drawable*>*         get_render_bin() { return m_render_manager->get_active_render_bin(); }
+    int                             get_render_bin_size() { return m_render_manager->get_active_render_bin_size(); }
+    xxRenderer*                     get_renderer() { return m_renderer.get(); }
+    render_type                     get_renderer_type() { return m_render_type; }
+
+  private:
+    std::shared_ptr<xxRenderer>     m_renderer;
+    render_type                     m_render_type;
+    int32_t                         m_render_bin_objects;
+    int32_t                         m_cbv_srv_offset;
+    std::vector<instance_buffer>    m_instance_buffer;
+    std::shared_ptr<RenderManager>  m_render_manager;
+  };
+}

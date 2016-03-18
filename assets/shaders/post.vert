@@ -9,6 +9,8 @@ layout (location = 2) in vec2 uv;
 layout (location = 3) in vec3 tangent;
 layout (location = 4) in vec3 bitangent;
 
+layout (location = 0) out vec2 frag_uv;
+
 layout (set = 0, binding = 0) uniform UBO1
 {
   mat4 mvp;
@@ -35,14 +37,8 @@ layout (set = 1, binding = 0) uniform UBO2
 
 } world;
 
-layout (location = 0) out vec3 frag_normal;
-
 void main() 
 {
-	frag_normal = normal;
-
-  	frag_normal = ( vec4( normal, 0.0f) * inverse(instance.model) ).xyz;
-  	frag_normal = normalize( frag_normal );
-
-	gl_Position = instance.mvp * vec4(position.xyz, 1.0);
+	frag_uv = uv;
+	gl_Position = vec4(position.xyz, 1.0);
 }

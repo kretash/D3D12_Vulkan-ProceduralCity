@@ -398,9 +398,12 @@ public:
 		for (uint32_t i = 0; i < imageCount; i++)
 		{
 			vkDestroyImageView(device, buffers[i].view, nullptr);
+      buffers[i].view = VK_NULL_HANDLE;
 		}
 		fpDestroySwapchainKHR(device, swapChain, nullptr);
+    swapChain = VK_NULL_HANDLE;
 		vkDestroySurfaceKHR(instance, surface, nullptr);
+    surface = VK_NULL_HANDLE;
 	}
 
 };

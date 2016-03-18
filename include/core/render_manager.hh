@@ -18,26 +18,28 @@ http://opensource.org/licenses/MIT
 #include "core/drawable.hh"
 #include <vector>
 
-class                     RenderManager {
-public:
-  RenderManager();
-  ~RenderManager();
+namespace kretash {
+  class                     RenderManager {
+  public:
+    RenderManager();
+    ~RenderManager();
 
-  void                    add_child( Drawable* d );
-  void                    update( float df );
+    void                    add_child( Drawable* d );
+    void                    update( float df );
 
-  int32_t                 get_render_bin_size() { return static_cast< int32_t >( m_render_bin.size() ); }
-  std::vector<Drawable*>* get_render_bin() { return &m_render_bin; }
+    int32_t                 get_render_bin_size() { return static_cast< int32_t >( m_render_bin.size() ); }
+    std::vector<Drawable*>* get_render_bin() { return &m_render_bin; }
 
-  int32_t                 get_active_render_bin_size() { return static_cast< int32_t >( m_active_render_bin.size() ); }
-  std::vector<Drawable*>* get_active_render_bin() { return &m_active_render_bin; }
+    int32_t                 get_active_render_bin_size() { return static_cast< int32_t >( m_active_render_bin.size() ); }
+    std::vector<Drawable*>* get_active_render_bin() { return &m_active_render_bin; }
 
-private:
-  bool                    _inside_frustum( float3 point, float r, float maxh );
+  private:
+    bool                    _inside_frustum( float3 point, float r, float maxh );
 
-  void                    _generate_frustum_planes();
-  plane                   m_frustum_planes[6];
+    void                    _generate_frustum_planes();
+    plane                   m_frustum_planes[6];
 
-  std::vector<Drawable*>  m_render_bin;
-  std::vector<Drawable*>  m_active_render_bin;
-};
+    std::vector<Drawable*>  m_render_bin;
+    std::vector<Drawable*>  m_active_render_bin;
+  };
+}

@@ -18,6 +18,8 @@ layout (location = 5) out vec3 eye_dir;
 layout (location = 6) out vec3 light_dir;
 layout (location = 7) out mat3 TBN;
 
+layout (location = 11) out vec3 frag_tangent;
+
 layout (set = 0, binding = 0) uniform UBO1
 {
   mat4 mvp;
@@ -65,7 +67,9 @@ const vec3 L22  = vec3(-0.161784, -0.191783, -0.219152);
 
 void main() 
 {
-  	frag_normal = ( vec4( normal, 0.0f) * instance.normal_matrix ).xyz;
+	mat4 nm = instance.normal_matrix;
+
+  	frag_normal = ( vec4( normal, 0.0f) * nm ).xyz;
   	frag_normal = normalize( frag_normal );
 
 	spherical_harmonics =  C1 * L22 * (frag_normal.x * frag_normal.x - frag_normal.y * frag_normal.y) +
@@ -85,13 +89,23 @@ void main()
 	distance = clamp( distance, 0.0f, 1.0f );
   	frag_uv = uv;
 
-	TBN = transpose( mat3( tangent, bitangent, frag_normal ));
+	vec3 s_tangent = ( vec4( tangent, 0.0f) * nm ).xyz;
+  	s_tangent = normalize( tangent );
+
+	vec3 s_bitangent = ( vec4( bitangent, 0.0f) * nm ).xyz;
+  	s_bitangent = normalize( cross( s_tangent, normal) );
+
+	TBN = transpose( mat3( s_tangent, s_bitangent, normal ));
 
 	vec4 pos = vec4( position, 1.0f) * instance.model;
 	eye_dir = normalize( pos.xyz - world.eye_view );
 
-	light_dir = normalize( -world.light_pos );
-  	light_dir = ( vec4( light_dir, 0.0f) * instance.normal_matrix ).xyz;
+	light_dir = normalize( world.light_pos );
+  	light_dir = ( vec4( light_dir, 0.0f) * nm ).xyz;
+
+  	//TBN = mat3( mat4( TBN ) * instance.normal_matrix );
+
+	//frag_tangent = cross(tangent, normal) ;
 
 	gl_Position = frag_position, 1.0f;
 }

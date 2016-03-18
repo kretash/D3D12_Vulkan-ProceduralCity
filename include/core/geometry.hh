@@ -19,23 +19,27 @@ http://opensource.org/licenses/MIT
 
 #include "engine.hh"
 
-class               Geometry {
-public:
-  Geometry();
-  Geometry( const Geometry* c );
-  ~Geometry();
+namespace kretash {
+  class               Geometry {
+  public:
+    Geometry();
+    Geometry( const Geometry* c );
+    ~Geometry();
 
-  void              load( std::string filename );
+    void              load( std::string filename );
+    void              reload();
 
-  void              set_vertex_offset( int32_t v ) { m_vertex_offset = v; }
-  void              set_index_offset( uint32_t i ) { m_indicies_offset = i; }
-  void              set_indicies_count( uint32_t c ) { m_indicies_count = c; }
+    void              set_vertex_offset( int32_t v ) { m_vertex_offset = v; }
+    void              set_index_offset( uint32_t i ) { m_indicies_offset = i; }
+    void              set_indicies_count( uint32_t c ) { m_indicies_count = c; }
 
-  uint32_t          get_indicies_count() { return m_indicies_count; }
-  uint32_t          get_indicies_offset() { return m_indicies_offset; }
-  int               get_vertex_offset() { return m_vertex_offset; }
-protected:
-  uint32_t          m_indicies_count;
-  uint32_t          m_indicies_offset;
-  int32_t           m_vertex_offset;
-};
+    uint32_t          get_indicies_count() { return m_indicies_count; }
+    uint32_t          get_indicies_offset() { return m_indicies_offset; }
+    int               get_vertex_offset() { return m_vertex_offset; }
+  protected:
+    std::string       m_filename;
+    uint32_t          m_indicies_count;
+    uint32_t          m_indicies_offset;
+    int32_t           m_vertex_offset;
+  };
+}

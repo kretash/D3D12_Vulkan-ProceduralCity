@@ -1,5 +1,7 @@
 #pragma once
 
+namespace kretash {
+
 class           Base {
 public:
 	Base() {}
@@ -10,3 +12,4 @@ public:
 	virtual void  update() {}
 	virtual void  shutdown() {}
 };
+}

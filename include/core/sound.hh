@@ -24,26 +24,29 @@ namespace FMOD {
   class DSP;
 }
 
-class                 Sound {
-public:
-  Sound();
-  ~Sound();
+namespace kretash {
 
-  void                play_sound( std::string file );
+  class                 Sound {
+  public:
+    Sound();
+    ~Sound();
 
-  //only call one per frame
-  void                get_spectrum( std::vector<float>* spectrum_L, std::vector<float>* spectrum_R );
-  void                get_smooth_spectrum( std::vector<float>* spectrum_L, std::vector<float>* spectrum_R );
-  void                get_smooth_simplified_spectrum( std::vector<float>* spectrum );
+    void                play_sound( std::string file );
 
-private:
+    //only call one per frame
+    void                get_spectrum( std::vector<float>* spectrum_L, std::vector<float>* spectrum_R );
+    void                get_smooth_spectrum( std::vector<float>* spectrum_L, std::vector<float>* spectrum_R );
+    void                get_smooth_simplified_spectrum( std::vector<float>* spectrum );
 
-  bool                m_system_started; 
-  std::vector<float>  m_smooth_spectrum_L;
-  std::vector<float>  m_smooth_spectrum_R;
+  private:
 
-  FMOD::System*       m_system;
-  FMOD::Sound*        m_sound;
-  FMOD::Channel*      m_channel;
-  FMOD::DSP*          m_dsp;
-};
+    bool                m_system_started;
+    std::vector<float>  m_smooth_spectrum_L;
+    std::vector<float>  m_smooth_spectrum_R;
+
+    FMOD::System*       m_system;
+    FMOD::Sound*        m_sound;
+    FMOD::Channel*      m_channel;
+    FMOD::DSP*          m_dsp;
+  };
+}

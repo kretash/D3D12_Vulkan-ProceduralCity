@@ -12,6 +12,8 @@ layout (location = 5) in vec3 eye_dir;
 layout (location = 6) in vec3 light_dir;
 layout (location = 7) in mat3 TBN;
 
+layout (location = 11) in vec3 frag_tangent;
+
 layout (location = 0) out vec4 frag_color;
 
 layout (set = 0, binding = 0) uniform UBO1
@@ -65,13 +67,16 @@ void main()
 	diffuse_color = max( vec3( 0.0f, 0.0f, 0.0f), diffuse_color );
 
 	//Specular
-	if( dot_product < 0.0 ) {
+	if( dot_product > 0.0 ) {
 		vec3 half_vector = normalize( light_dir - eye_dir );
 		float specular = max( 0.0f, dot( half_vector, normal ));
-		specular_color = vec3( pow( specular, 1.0f ) * specular_map_r );
+		specular_color = vec3( pow( specular, 16.0f ) * specular_map_r );
 	}
 		
 	frag_color.xyz = ambient_color + diffuse_color + specular_color; 
 	frag_color.xyz = mix( frag_color.xyz, world.fog_color, distance );
+	//frag_color.xyz = specular_color;
 	frag_color.w = 1.0f;
+
+	//frag_color.xyz = frag_tangent;
 }

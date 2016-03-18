@@ -19,21 +19,23 @@ http://opensource.org/licenses/MIT
 
 #include "base.hh"
 
-class						            Renderer;
-class						            Drawable;
-class						            Geometry;
+namespace kretash {
+  class						            Renderer;
+  class						            Drawable;
+  class						            Geometry;
 
-class                       Skydome : public Base {
-public:
-  Skydome();
-  ~Skydome();
+  class                       Skydome : public Base {
+  public:
+    Skydome();
+    ~Skydome();
 
-  void                      init();
-  void                      update();
+    void                      init();
+    void                      update();
 
-  Renderer*                 get_renderer() { return m_renderer.get(); }
-private:
-  std::shared_ptr<Drawable> m_drawable;
-  std::shared_ptr<Geometry> m_geometry;
-  std::shared_ptr<Renderer> m_renderer;
-};
+    Renderer*                 get_renderer() { return m_renderer.get(); }
+  private:
+    std::shared_ptr<Drawable> m_drawable;
+    std::shared_ptr<Geometry> m_geometry;
+    std::shared_ptr<Renderer> m_renderer;
+  };
+}

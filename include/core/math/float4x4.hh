@@ -112,7 +112,6 @@ struct float4x4 {
 
   void look_at( float3 eye, float3 focus, float3 up ) {
 
-#if 1
     float4x4( 1.0f );
     float3 z_axis = float3::normal( focus - eye );
     float3 x_axis = float3::normal( float3::cross( up, z_axis ) );
@@ -135,39 +134,6 @@ struct float4x4 {
     data[13] = -float3::dot( y_axis, eye );
     data[14] = -float3::dot( z_axis, eye );
     data[15] = 1;
-#elif __VULKAN__
-    float4x4( 1.0f );
-
-    float3 z_axis = ( focus - eye );
-    z_axis.normalize();
-
-    up.normalize();
-    float3 x_axis = float3::cross( up, z_axis );
-    x_axis.normalize();
-
-    float3 y_axis = float3::cross( z_axis, x_axis );
-    y_axis.normalize();
-
-    data[0] = x_axis.x;
-    data[1] = y_axis.x;
-    data[2] = -z_axis.x;
-    data[3] = 0;
-    data[4] = x_axis.y;
-    data[5] = y_axis.y;
-    data[6] = -z_axis.y;
-    data[7] = 0;
-    data[8] = x_axis.z;
-    data[9] = y_axis.z;
-    data[10] = -z_axis.z;
-    data[11] = 0;
-
-    data[12] = -float3::dot( x_axis, eye );
-    data[13] = -float3::dot( y_axis, eye );
-    data[14] = float3::dot( z_axis, eye );
-    data[15] = 1;
-#else
-#error "No api selected"
-#endif
 
   }
 

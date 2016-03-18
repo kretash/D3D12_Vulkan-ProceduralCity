@@ -61,52 +61,70 @@ http://opensource.org/licenses/MIT
 
 #define PATH                    "../assets/"
 #define TPATH                   "../assets/texture/"
-#define SPATH                   L"../assets/shaders/"
+#define WSPATH                   L"../assets/shaders/"
+#define SPATH                  "../assets/shaders/"
 #define SOUNDPATH               "../assets/sound/"
 #define OPATH                   "../assets/obj/"
 
-class                           EngineSettings {
-public:
-  static EngineSettings* get_instance() {
-    if( m_instance == nullptr )
-      m_instance = new EngineSettings();
-    return m_instance;
-  }
+namespace kretash {
+  class                           EngineSettings {
+  public:
+    static EngineSettings* get_instance() {
+      if( m_instance == nullptr )
+        m_instance = new EngineSettings();
+      return m_instance;
+    }
 
-  static void shutdown() {
-    delete m_instance;
-    m_instance = nullptr;
-  }
+    static void shutdown() {
+      delete m_instance;
+      m_instance = nullptr;
+    }
 
-  void                          start_timer( std::string timer_id );
-  double                        get_time( std::string timer_id );
+    void                          start_timer( std::string timer_id );
+    double                        get_time( std::string timer_id );
 
-  void                          start_frame();
-  void                          start_render();
-  void                          end_frame();
+    void                          start_frame();
+    void                          start_render();
+    void                          end_frame();
 
-  float                         get_delta_time() { return m_delta_time; }
-  float                         get_time_elapsed() { return m_time_elapsed; }
+    float                         get_time_elapsed() { return m_time_elapsed; }
+    float                         get_delta_time() { return m_delta_time; }
+    float                         get_update_time(){ return m_update_time; }
+    float                         get_render_time(){ return m_render_time; }
+    float                         get_smooth_delta_time() { return m_smooth_delta_time; }
+    float                         get_smooth_update_time() { return m_smooth_update_time; }
+    float                         get_smooth_render_time() { return m_smooth_render_time; }
 
-  engine_settings               get_settings();
-  void                          log( std::string l );
+    engine_settings               get_settings();
+    engine_settings*              get_psettings();
+    void                          save_settings();
+    void                          log( std::string l );
 
-private:
-  EngineSettings();
-  ~EngineSettings();
+  private:
+    EngineSettings();
+    ~EngineSettings();
 
-  static EngineSettings*        m_instance;
+    static EngineSettings*        m_instance;
 
-  int32_t                       frame_counter;
-  float                         m_delta_time;
-  float                         m_time_elapsed;
-  float                         m_fps_smooth;
-  float                         m_update_smooth;
-  float                         m_render_smooth;
-  engine_settings               m_engine_settings;
+    int32_t                       frame_counter;
+    float                         m_time_elapsed;
 
-  std::string                   ids_[MAX_TIMERS];
+    float                         m_delta_time;
+    float                         m_update_time;
+    float                         m_render_time;
 
-  std::chrono::high_resolution_clock::time_point
-                                starting_time[MAX_TIMERS];
-};
+    float                         m_smooth_delta_time;
+    float                         m_smooth_update_time;
+    float                         m_smooth_render_time;
+    float                         m_smooth_delta_time_additve;
+    float                         m_smooth_update_time_additve;
+    float                         m_smooth_render_time_additve;
+
+    engine_settings               m_engine_settings;
+
+    std::string                   ids_[MAX_TIMERS];
+
+    std::chrono::high_resolution_clock::time_point
+      starting_time[MAX_TIMERS];
+  };
+}

@@ -16,6 +16,8 @@ struct PSInput {
   float3 eye_dir : EYE_DIR;
   float3 light_dir : LIGHT_DIR;
   float3x3 TBN : TBN;
+
+  float3 tangent : TANGENT;
 };
 
 cbuffer InstanceData : register( b0, space0 ) {
@@ -42,7 +44,7 @@ cbuffer FrameData : register( b1 ) {
 };
 
 Texture2D textures[2048] : register( t0 );
-SamplerState	mySampler	: register( s0 );
+SamplerState samplers[2]	: register( s0 );
 
 static const float scale_factor = 0.8f;
 static const float C1 = 0.429043f;
@@ -90,14 +92,12 @@ PSInput VSMain( VSInput input ) {
     2.0 * C2 * L10  * frag_normal.z;
 
   //TBN
-  float3 normal = normalize( input.normal );
-  normal = mul( float4( normal, 0.0f), normal_matrix ).xyz;
-  result.normal = normal;
+  result.normal = frag_normal;
 
   float3 tangent = normalize( input.tangent );
   float3 bitangent = normalize( input.bitangent );
 
-  float3x3 TBN = transpose( float3x3( tangent, bitangent, normal ) );
+  float3x3 TBN = transpose( float3x3( tangent, bitangent, frag_normal ) );
   result.TBN = TBN;
 
   float3 pos = mul( float4( input.position.xyz, 1.0f ), model ).xyz;
@@ -105,7 +105,11 @@ PSInput VSMain( VSInput input ) {
   result.eye_dir = normalize( pos - eye_view );
 
   result.light_dir = normalize( -light_pos );
+  //result.light_dir.x = -result.light_dir.x;
+  //result.light_dir.z = -result.light_dir.z;
   result.light_dir = mul( float4( result.light_dir, 0.0f ), normal_matrix ).xyz;
+
+  result.tangent = tangent;
 
   return result;
 }
@@ -116,9 +120,9 @@ float4 PSMain( PSInput input ) : SV_TARGET
   float3 diffuse_color = float3( 0.0f, 0.0f, 0.0f );
   float3 specular_color = float3( 0.0f, 0.0f, 0.0f );
 
-  float3 texture_color = textures[d_texture_id].Sample( mySampler, input.uv ).rgb;
-  float3 normal_map = textures[n_texture_id].Sample( mySampler, input.uv ).rgb;
-  float3 specular_map = textures[s_texture_id].Sample( mySampler, input.uv ).rgb;
+  float3 texture_color = textures[d_texture_id].Sample( samplers[1], input.uv ).rgb;
+  float3 normal_map = textures[n_texture_id].Sample( samplers[1], input.uv ).rgb;
+  float3 specular_map = textures[s_texture_id].Sample( samplers[1], input.uv ).rgb;
 
   float3 normal = mul( normalize( normal_map * 2.0f - 1.0f ), input.TBN );
   float specular_map_r = specular_map.x;
@@ -143,4 +147,5 @@ float4 PSMain( PSInput input ) : SV_TARGET
   final_color = lerp( final_color, fog_color, input.distance );
 
   return float4( final_color, 1.0f );
+  //return float4( input.tangent, 1.0f );
 }
