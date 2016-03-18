@@ -13,6 +13,7 @@ Since I started this project in September I thought about porting it to Vulkan. 
 - Windows 10
 - Visual Studio 2015
 - Windows 10 SDK
+- LunarG SDK 1.0.3 (Only necessary to run vulkan validation)
 
 ### Build ###
 ---
