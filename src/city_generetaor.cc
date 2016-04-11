@@ -51,13 +51,21 @@ namespace kretash {
         std::this_thread::sleep_for( std::chrono::milliseconds( 4 ) );
       }
     }
-  
+
   }
 
-  void CityGenerator::regenerate( ) {
+  void CityGenerator::regenerate() {
 
     m_count = 0;
     m_to_generate_lock.lock();
+
+    m_to_generate.clear();
+
+    m_placeholder_building = nullptr;
+    m_placeholder_building = std::make_shared<Building>( true );
+    m_placeholder_building->generate_placeholder();
+    m_placeholder_building->get_texture()->init_procedural( 0.0f, 0.0f, 0 );
+
     for( int32_t i = 0; i < m_grid; i++ ) {
       for( int32_t e = 0; e < m_grid; e++ ) {
         m_buildigs[m_count]->set_ready_to_process( false );
@@ -224,6 +232,17 @@ namespace kretash {
 
     ++count;
     count = count % 3;
+
+    //m_count = 0;
+    //for( int32_t i = 0; i < m_grid; i++ ) {
+    //  for( int32_t e = 0; e < m_grid; e++ ) {
+    //    if( e == m_grid / 2 )
+    //      m_street_block_D[m_count++]->set_active( true );
+    //    else
+    //      m_street_block_D[m_count++]->set_active( false );
+
+    //  }
+    //}
   }
 
   void CityGenerator::_prepare_vectors() {

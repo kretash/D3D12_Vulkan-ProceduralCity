@@ -88,8 +88,8 @@ namespace kretash {
   void GPU_pool::synch() {
 
     if( m_uploading_geometry.load() == true ) {
-      //It going to happen often, best solution that I have at the moment
-      //std::cout << "upload thread sync failed.\n";
+      //Its going to happen often, best solution that I have at the moment
+      std::cout << "upload thread sync failed.\n";
       while( m_uploading_geometry.load() ) { /*wait*/ }
     }
   }

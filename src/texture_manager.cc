@@ -21,15 +21,16 @@
 #define MAX_GENERATED_TEXTURES 16
 #define MAX_UPGRADE_TEXTURES 16
 #define MAX_CLEAR_TEXTURES 32
+#define SWAP_UPLOAD_TEXTURES 3
 
 #define LOD_0_THRESHOLD 150.0f
 #define LOD_1_THRESHOLD 250.0f
 #define LOD_2_THRESHOLD 350.0f
 #define LOD_3_THRESHOLD 550.0f
 
-#define ADD_SIZE_MULTIPLIER 32.0f
-#define FREE_MEM_SIZE_MULTIPLIER 128.0f
-#define IMPROVE_SIZE_MULTIPLIER 64.0f
+#define ADD_SIZE_MULTIPLIER 16
+#define FREE_MEM_SIZE_MULTIPLIER 128
+#define IMPROVE_SIZE_MULTIPLIER 32
 
 namespace kretash {
 
@@ -114,7 +115,8 @@ namespace kretash {
           int32_t offset = *id_begin._Ptr;
           m_free_ids.erase( id_begin );
 
-          c_t->get_texture( tt )->create_shader_resource_view( k_engine->get_renderer( rTEXTURE )->get_renderer(), offset );
+          c_t->get_texture( tt )->create_shader_resource_view( k_engine->get_renderer( rTEXTURE )->get_renderer(),
+            offset, 4 );
 
           c_t->set_id( tt, offset );
           m_texture_db.push_back( texture_db( c_t->get_filename( tt ), offset ) );
@@ -144,12 +146,16 @@ namespace kretash {
     m_threads.push_back( std::thread( &TextureManager::_upload_generated_textures, this ) );
   }
 
-  //should be synched
+  //should be synced
   void TextureManager::regenerate() {
 
     m_exit_thread.store( true );
     m_threads[0].join();
     m_threads.clear();
+
+    m_texture_generator->shutdown();
+    m_texture_generator = nullptr;
+    m_texture_generator = std::make_shared<TextureGenerator>();
 
     m_texture_db.clear();
 
@@ -198,7 +204,7 @@ namespace kretash {
 
         m_texture_generator->generate( c_t );
 
-        if( upload_limit++ > 10 ) break;
+        if( upload_limit++ > SWAP_UPLOAD_TEXTURES ) break;
       }
     }
 
@@ -245,7 +251,7 @@ namespace kretash {
           c_t->get_texture( tt )->create_texture( c_t->get_texture_pointer( tt ), w, h, c );
 
           c_t->get_texture( tt )->create_shader_resource_view(
-            k_engine->get_renderer( rTEXTURE )->get_renderer(), c_t->get_id( tt ) );
+            k_engine->get_renderer( rTEXTURE )->get_renderer(), c_t->get_id( tt ), 4 );
 
           m_texture_db.push_back( texture_db( c_t->get_filename( tt ), c_t->get_id( tt ) ) );
         }
@@ -254,7 +260,9 @@ namespace kretash {
 
     m_texture_generator->gather_texture( m_placeholder_texture.get() );
 
+    upload_limit = base_upload;
     upload_limit = 0;
+
     for( int i = base_upload; i < m_textured_drawables.size(); ++i ) {
 
       Texture* c_t = m_textured_drawables[i]->get_texture();
@@ -262,12 +270,12 @@ namespace kretash {
       if( c_t->get_type() == tPROCEDURAL_TEXTURE ) {
         m_texture_generator->gather_texture( c_t );
         m_clean_up_textures.push_back( c_t );
-        if( upload_limit++ > 10 ) break;
+        if( upload_limit++ > SWAP_UPLOAD_TEXTURES ) break;
       } else {
 
       }
-
     }
+
     base_upload = upload_limit;
 
     m_context->compute_texture_upload();
@@ -294,9 +302,12 @@ namespace kretash {
 
           m_texture_generator->generate( c_t );
 
-          if( upload_limit++ - base_upload > 10 ) break;
+          if( upload_limit++ - base_upload > SWAP_UPLOAD_TEXTURES ) break;
         }
       }
+
+      upload_limit = base_upload;
+
       for( int i = base_upload; i < m_textured_drawables.size(); ++i ) {
 
         Texture* c_t = m_textured_drawables[i]->get_texture();
@@ -304,17 +315,22 @@ namespace kretash {
         if( c_t->get_type() == tPROCEDURAL_TEXTURE ) {
           m_texture_generator->gather_texture( c_t );
           m_clean_up_textures.push_back( c_t );
-          if( upload_limit++ - base_upload > 10 ) break;
+          if( upload_limit++ - base_upload > SWAP_UPLOAD_TEXTURES ) break;
         } else {
 
         }
 
       }
+
       base_upload = upload_limit;
+
       m_context->compute_texture_upload();
       m_context->wait_for_texture_upload();
       _clean_up_textures();
-      if( base_upload == m_textured_drawables.size() )break;
+      
+      if( base_upload >= m_textured_drawables.size() ){
+        break;
+      }
     }
 
     m_exit_thread.store( false );
@@ -352,7 +368,7 @@ namespace kretash {
       m_upload_textures.store( true );
     } else {
 
-      _sort_vectors(); // 0.01998
+      _sort_vectors(); //0.01998
 
       _look_for_upload_textures(); //0.0013462
 
@@ -362,7 +378,7 @@ namespace kretash {
       free_memory &= m_device_memory_free > LOD0_size * FREE_MEM_SIZE_MULTIPLIER;
 
       if( !free_memory || m_free_ids.size() < 256 ) {
-        _clear_deprecated_textures(); // 0.027926
+        _clear_deprecated_textures(); //0.027926
       }
     }
 
@@ -495,10 +511,10 @@ namespace kretash {
 
   void TextureManager::_look_for_upload_textures() {
     // load from non_textured
-    for( int i = 0; i < MAX_GENERATED_TEXTURES; ++i ) {
+    for( int32_t i = 0; i < MAX_GENERATED_TEXTURES; ++i ) {
 
       if( m_non_textured_drawables.size() == 0 ) break;
-      if( m_non_textured_drawables.size() == i ) break;
+      if( static_cast<int32_t>(m_non_textured_drawables.size() ) <= i ) break;
       if( m_non_textured_drawables[0]->get_distance() == 99999.9f ) break;
 
       Texture* c_t = m_non_textured_drawables[i]->get_texture();
@@ -525,9 +541,7 @@ namespace kretash {
       bool free_ids = m_free_ids.size() > 2;
       bool close = m_non_textured_drawables[i]->get_distance() < LOD_1_THRESHOLD;
       bool active = m_non_textured_drawables[i]->get_active();
-
-      //std::cout << free_ids << free_memory << close << active << std::endl;
-
+      
       if( free_memory && free_ids && ( close || active ) ) {
 
         Texture* c_t = m_non_textured_drawables[i]->get_texture();
@@ -598,7 +612,6 @@ namespace kretash {
         m_host_visible_memory_free -= size;
         m_device_memory_free -= size;
 
-        //if( upgraded == MAX_UPGRADE_TEXTURES ) break;
       }
     }
   }

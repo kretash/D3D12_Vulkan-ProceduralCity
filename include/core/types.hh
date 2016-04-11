@@ -244,7 +244,7 @@ namespace kretash {
       play_sound( false ),
       sound_file(),
       msaa_enabled( false ),
-      update_city( false ),
+      update_city( true ),
       msaa_count( 0 ),
       upscale_render( 1.0f ),
       m_api( kVulkan ) {

@@ -149,6 +149,5 @@ float4 PSMain( PSInput input ) : SV_TARGET
   }
 
   final_color += sun;
-
   return float4( final_color, 1.0f );
 }

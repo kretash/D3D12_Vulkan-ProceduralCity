@@ -14,7 +14,7 @@ namespace kretash {
   }
 
   void RenderManager::update( float df ) {
-#if 1
+
     static bool update_RM = true;
     Input* input = k_engine->get_input();
 
@@ -25,8 +25,6 @@ namespace kretash {
       update_RM = false;
 
     if( update_RM ) {
-
-#endif // dont forget the } at the end
 
       Camera* c = k_engine->get_camera();
       float3 c_pos = c->get_position();
@@ -82,10 +80,42 @@ namespace kretash {
 
           m_render_bin[i]->set_distance( length );
           m_render_bin[i]->set_active( true );
+
         }
       }
 
     }
+    /*
+    else {
+      Camera* c = k_engine->get_camera();
+      float3 c_pos = c->get_position();
+      float3 camera = k_engine->get_camera()->get_position();
+
+      m_active_render_bin.clear();
+
+      for( int32_t i = 0; i < m_render_bin.size(); ++i ) {
+
+        float3 pos = m_render_bin[i]->get_position();
+
+        if( pos.x == 0 || pos.x == c_pos.x ) {
+          m_active_render_bin.push_back( m_render_bin[i] );
+          float3 v_lenght = c_pos - pos;
+          float length = float3::lenght( v_lenght );
+
+          if( length < 500 )
+            m_render_bin[i]->set_lod( 0 );
+          else if( length < 1000 )
+            m_render_bin[i]->set_lod( 1 );
+          else
+            m_render_bin[i]->set_lod( 2 );
+
+          m_render_bin[i]->set_distance( length );
+
+          m_render_bin[i]->set_active( true );
+        }
+      }
+    }
+    */
   }
 
   bool RenderManager::_inside_frustum( float3 point, float r, float maxh ) {

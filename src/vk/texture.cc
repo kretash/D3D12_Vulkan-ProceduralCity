@@ -6,14 +6,11 @@
 
 namespace kretash {
 
-  //TODO
-  const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-
   /* Creates a texture in Vulkan and D3D12 */
   void vkTexture::create_texture( void* data, int32_t width, int32_t height, int32_t channels ) {
 
     VkResult vkr = {};
-    vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
+    vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
 
     m_height = height;
     m_width = width;
@@ -24,7 +21,19 @@ namespace kretash {
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_create_info.pNext = nullptr;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = format;
+
+    assert( ( channels == 1 ) || ( channels == 4 ) && "MISSING IMPLEMENTATION FOR !4 CHANNELS" );
+
+    int32_t texture_size = 0;
+
+    if( channels == 1 ) {
+      image_create_info.format = VK_FORMAT_R8_UNORM;
+      texture_size = m_width*m_height*sizeof( int8_t );
+    } else if( channels == 4 ) {
+      texture_size = m_width*m_height * 4;//3 channel image not supported
+      image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    }
+
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -49,7 +58,7 @@ namespace kretash {
 
     m_mappable_mem_block = m_context->m_vk_host_pool->get_mem( mem_req.size );
 
-    vkr = vkBindImageMemory( m_context->m_device, m_mappable_image, m_context->m_host_pool_memory, 
+    vkr = vkBindImageMemory( m_context->m_device, m_mappable_image, m_context->m_host_pool_memory,
       m_mappable_mem_block.m_start );
     vkassert( vkr );
 
@@ -64,7 +73,23 @@ namespace kretash {
       mem_req.size, 0, &v_data );
     vkassert( vkr );
 
-    memcpy( v_data, data, m_width*m_height*sizeof( int32_t ) );
+    //if( channels == 4 ) {
+    //  int32_t counter = 0;
+    //  int8_t* texture = ( int8_t* ) data;
+    //  int32_t* texture4 = ( int32_t* ) data;
+
+    //  for( uint32_t i = 0; i < m_width*m_height; ++i ) {
+
+    //    int32_t p = texture4[i];
+
+    //    texture[counter++] = p >> 24;
+    //    texture[counter++] = p >> 16;
+    //    texture[counter++] = p >> 8;
+
+    //  }
+    //}
+
+    memcpy( v_data, data, texture_size );
 
     vkUnmapMemory( m_context->m_device, m_context->m_host_pool_memory );
 
@@ -121,9 +146,9 @@ namespace kretash {
   }
 
   /* Creates a texture view in Vulkan and D3D12 */
-  void vkTexture::create_shader_resource_view( xxRenderer* r, int32_t offset ) {
+  void vkTexture::create_shader_resource_view( xxRenderer* r, int32_t offset, int32_t channels ) {
 
-    vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
+    vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
 
     VkSamplerCreateInfo sampler = {};
     sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -151,7 +176,13 @@ namespace kretash {
     view.flags = 0;
     view.image = m_image;
     view.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view.format = format;
+    
+    if( channels == 1 ) {
+      view.format = VK_FORMAT_R8_UNORM;
+    } else if( channels == 4 ) {
+      view.format = VK_FORMAT_R8G8B8A8_UNORM;
+    }
+
     view.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
     view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     view.subresourceRange.baseMipLevel = 0;
@@ -180,7 +211,7 @@ namespace kretash {
   /* Clears the view resources in Vulkan and D3D12 */
   void vkTexture::clear_texture_upload() {
 
-    vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
+    vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
 
     if( m_mappable_image != VK_NULL_HANDLE ) {
       vkDestroyImage( m_context->m_device, m_mappable_image, nullptr );
@@ -194,7 +225,7 @@ namespace kretash {
   /* Clears the whole texture in Vulkan and D3D12 */
   void vkTexture::clear_texture() {
 
-    vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
+    vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
 
     if( m_view != VK_NULL_HANDLE ) {
 
@@ -214,8 +245,8 @@ namespace kretash {
   /* Removes the texture from the descriptor set in Vulkan and D3D12 */
   void vkTexture::clear_descriptor_set( xxTexture* other, int32_t offset ) {
 
-    vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
-    vkTexture* t = dynamic_cast<vkTexture*>( other );
+    vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
+    vkTexture* t = dynamic_cast< vkTexture* >( other );
 
     VkDescriptorImageInfo image_descriptor = vkTools::initializers::descriptorImageInfo(
       t->m_sampler, t->m_view, VK_IMAGE_LAYOUT_GENERAL );
@@ -241,54 +272,54 @@ namespace kretash {
     m_width = 0;
     m_height = 0;
     m_mip_levels = 0;
-    
+
     if( m_sampler != VK_NULL_HANDLE ) {
-      vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
+      vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
       vkDestroySampler( m_context->m_device, m_sampler, nullptr );
       m_sampler = VK_NULL_HANDLE;
     }
 
     if( m_image != VK_NULL_HANDLE ) {
-      vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
+      vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
       vkDestroyImage( m_context->m_device, m_image, nullptr );
       m_image = VK_NULL_HANDLE;
     }
 
     if( m_mappable_image != VK_NULL_HANDLE ) {
-      vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
+      vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
       vkDestroyImage( m_context->m_device, m_mappable_image, nullptr );
       m_mappable_image = VK_NULL_HANDLE;
     }
 
     if( m_view != VK_NULL_HANDLE ) {
-      vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
+      vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
       vkDestroyImageView( m_context->m_device, m_view, nullptr );
       m_view = VK_NULL_HANDLE;
     }
-    
+
   }
   vkTexture::~vkTexture() {
 
     if( m_sampler != VK_NULL_HANDLE ) {
-      vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
+      vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
       vkDestroySampler( m_context->m_device, m_sampler, nullptr );
       m_sampler = VK_NULL_HANDLE;
     }
 
     if( m_image != VK_NULL_HANDLE ) {
-      vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
+      vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
       vkDestroyImage( m_context->m_device, m_image, nullptr );
       m_image = VK_NULL_HANDLE;
     }
 
     if( m_mappable_image != VK_NULL_HANDLE ) {
-      vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
+      vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
       vkDestroyImage( m_context->m_device, m_mappable_image, nullptr );
       m_mappable_image = VK_NULL_HANDLE;
     }
 
     if( m_view != VK_NULL_HANDLE ) {
-      vkContext* m_context = dynamic_cast<vkContext*>( k_engine->get_context() );
+      vkContext* m_context = dynamic_cast< vkContext* >( k_engine->get_context() );
       vkDestroyImageView( m_context->m_device, m_view, nullptr );
       m_view = VK_NULL_HANDLE;
     }

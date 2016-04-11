@@ -29,10 +29,12 @@ namespace kretash {
         found.m_size = size;
         m_used_memory.push_back( found );
 
-        if( free_mem.m_size > size ){
+        if( free_mem.m_size >= size ){
           free_mem.m_start += size;
           free_mem.m_size -= size;
           m_free_memory.push_back( free_mem );
+        }else{
+        int asdsfasdf = 0;
         }
 
         return found;
@@ -54,7 +56,7 @@ namespace kretash {
         found.m_size = size;
         m_used_memory.push_back( found );
 
-        if( free_mem.m_size > size ) {
+        if( free_mem.m_size >= size ) {
           free_mem.m_start += size;
           free_mem.m_size -= size;
           m_free_memory.push_back( free_mem );

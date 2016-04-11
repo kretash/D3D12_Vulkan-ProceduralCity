@@ -33,8 +33,10 @@ namespace kretash {
 
 
     void          api_swap();
-    float4x4      get_view() { return m_view; };
-    float4x4      get_projection() { return m_projection; };
+    void          set_cinematic_camera( bool c ) { m_cinematic_camera = c; }
+    bool          get_cinematic_camera() { return m_cinematic_camera; }
+    float4x4      get_view() { return m_view; }
+    float4x4      get_projection() { return m_projection; }
     float3        get_position() { return m_eye; }
     float3        get_look_direction() { return m_look_dir; }
 

@@ -27,6 +27,9 @@ namespace                    kretash {
   class                      xxTexture;
   class                      xxGeometry;
   class                      xxInterface;
+
+
+
   enum                       API;
 
   class                      Factory {

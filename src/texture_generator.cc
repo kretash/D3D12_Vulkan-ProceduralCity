@@ -12,7 +12,7 @@
 
 namespace kretash {
 
-using namespace tools;
+  using namespace tools;
 
   texel get_window_color( float n1, float n2, float n3 ) {
 
@@ -126,10 +126,23 @@ using namespace tools;
       int32_t w = desc->get_width( tt );
       int32_t h = desc->get_height( tt );
       int32_t c = desc->get_channels( tt );
-
-      desc->get_texture(tt)->create_texture( desc->get_texture_pointer( tt ), w, h, c );
-      desc->get_texture( tt )->create_shader_resource_view( k_engine->get_renderer( rTEXTURE )->get_renderer(), desc->m_future_texture_id[e] );
       
+      if( desc->get_channels( tt ) == 1 ) {
+        int8_t* texture = ( int8_t* ) desc->get_texture_pointer( tt );
+        int32_t* texture4 = ( int32_t* ) desc->get_texture_pointer( tt );
+
+        for( int32_t i = 0; i < w*h; ++i ) {
+
+          int32_t p = texture4[i];
+          texture[i] = p >> 24;
+
+        }
+      }
+
+      desc->get_texture( tt )->create_texture( desc->get_texture_pointer( tt ), w, h, c );
+      desc->get_texture( tt )->create_shader_resource_view( k_engine->get_renderer( rTEXTURE )->get_renderer(),
+        desc->m_future_texture_id[e], desc->get_channels( tt ) );
+
     }
 
 #endif
@@ -149,7 +162,7 @@ using namespace tools;
           m_generate_queue.erase( m_generate_queue.begin() );
           m_queue_mutex.unlock();
 
-#if 0
+#if 1
           _generate_elements( desc );
           _rasterize_elements( desc );
 #else
@@ -389,6 +402,8 @@ using namespace tools;
   }
 
   void TextureGenerator::_rasterize_specular( Texture* desc ) {
+
+    desc->m_channels[tSPECULAR] = 1;
     int32_t width = desc->_get_width();
     int32_t height = desc->_get_height();
 
@@ -529,6 +544,7 @@ using namespace tools;
     }
 
     m_threads.clear();
+    m_generate_queue.clear();
   }
 
   TextureGenerator::~TextureGenerator() {
@@ -539,6 +555,7 @@ using namespace tools;
     }
 
     m_threads.clear();
+    m_generate_queue.clear();
   }
 
 }

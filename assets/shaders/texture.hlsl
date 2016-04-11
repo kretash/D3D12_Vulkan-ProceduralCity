@@ -147,5 +147,4 @@ float4 PSMain( PSInput input ) : SV_TARGET
   final_color = lerp( final_color, fog_color, input.distance );
 
   return float4( final_color, 1.0f );
-  //return float4( input.tangent, 1.0f );
 }

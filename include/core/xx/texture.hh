@@ -31,7 +31,7 @@ namespace                   kretash {
     virtual void            create_texture( void* data, int32_t width, int32_t height, int32_t channels ) {};
 
     /* Creates a texture view in Vulkan and D3D12 */
-    virtual void            create_shader_resource_view( xxRenderer* r, int32_t offset ) {};
+    virtual void            create_shader_resource_view( xxRenderer* r, int32_t offset, int32_t channels ) {};
 
     /* Clears the view resources in Vulkan and D3D12 */
     virtual void            clear_texture_upload() {};

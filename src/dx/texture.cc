@@ -22,11 +22,16 @@ namespace kretash {
     HRESULT result;
     dxContext* m_context = dynamic_cast< dxContext* >( k_engine->get_context() );
 
-    assert( channels == 4 && "MISSING IMPLEMENTATION FOR !4 CHANNELS" );
 
     D3D12_RESOURCE_DESC textureDesc{};
     textureDesc.MipLevels = 1;
-    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+    assert( ( channels == 1 ) || ( channels == 4 ) && "MISSING IMPLEMENTATION FOR !4 CHANNELS" );
+    if( channels == 1 )
+      textureDesc.Format = DXGI_FORMAT_R8_UNORM;
+    else if( channels == 4 )
+      textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
     textureDesc.Width = width;
     textureDesc.Height = height;
     textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
@@ -69,14 +74,19 @@ namespace kretash {
   }
 
   /* Creates a texture view in Vulkan and D3D12 */
-  void dxTexture::create_shader_resource_view( xxRenderer* r, int32_t offset ) {
+  void dxTexture::create_shader_resource_view( xxRenderer* r, int32_t offset, int32_t channels ) {
 
     dxContext* m_context = dynamic_cast< dxContext* >( k_engine->get_context() );
     dxRenderer* m_renderer = dynamic_cast< dxRenderer* >( r );
 
     D3D12_SHADER_RESOURCE_VIEW_DESC diffuseSrvDesc = {};
     diffuseSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    diffuseSrvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+    if( channels == 1 )
+      diffuseSrvDesc.Format = DXGI_FORMAT_R8_UNORM;
+    else if( channels == 4 )
+      diffuseSrvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
     diffuseSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
     diffuseSrvDesc.Texture2D.MipLevels = 1;
 
@@ -98,5 +108,5 @@ namespace kretash {
   void dxTexture::clear_texture() {
     m_texture = nullptr;
   }
-  
+
 }

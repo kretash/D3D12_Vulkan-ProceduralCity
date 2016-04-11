@@ -162,6 +162,8 @@ namespace kretash {
     //horrible solution, but its not on the main thread so it shouldnt stall 
     if( m_vertex_buffer != nullptr ) delete[] m_vertex_buffer;
     if( m_elem_buffer != nullptr ) delete[] m_elem_buffer;
+    m_vertex_buffer = nullptr;
+    m_elem_buffer = nullptr;
 
     uint32_t num_vertices = static_cast< uint32_t >( n_vertices.size() );
     num_vertices = num_vertices * static_cast< uint32_t >( 3 );
@@ -473,6 +475,8 @@ namespace kretash {
   BuildingGen::~BuildingGen() {
     if( m_vertex_buffer != nullptr ) delete[] m_vertex_buffer;
     if( m_elem_buffer != nullptr ) delete[] m_elem_buffer;
+    m_vertex_buffer = nullptr;
+    m_elem_buffer = nullptr;
   }
 
   const float BuildingGen::pattern_set_5[5][5] =

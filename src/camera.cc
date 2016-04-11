@@ -29,7 +29,7 @@ namespace kretash {
 
   void Camera::init() {
     kretash::Window* w = k_engine->get_window();
-    init( w->get_aspect_ratio(), to_rad( 75.0f ), 0.1f, 2000.0f );
+    init( w->get_aspect_ratio(), to_rad( 45.0f ), 0.1f, 2000.0f );
   }
 
   void Camera::init( float aspect_ratio, float fov, float znear, float zfar ) {
@@ -178,7 +178,7 @@ namespace kretash {
 
   void Camera::_cinematic_camera() {
 
-    float time_elapsed = k_engine_settings->get_time_elapsed();
+    float time_elapsed = k_engine_settings->get_time_elapsed() * 0.001f;
 
     std::vector<float> spectrum;
     Sound* sound = k_engine->get_sound();
@@ -239,7 +239,7 @@ namespace kretash {
       const float barrel_roll_delay = 40.0f;
       float drop = ( *spectrum )[0] + ( *spectrum )[1] + ( *spectrum )[2];
 
-      bool drop_ready = drop > 0.09f;
+      bool drop_ready = drop > 0.01f;
       bool delay_ready = ( m_last_barrel_roll + barrel_roll_delay ) < time_elapsed;
       bool effect_running = m_looping_the_loop || m_barrel_rolling;
 
@@ -258,10 +258,10 @@ namespace kretash {
       float up = cosf( barrel_time );
       float side = sinf( barrel_time );
 
-      m_up = float3( -side, up, side );
+      m_up = float3( -side, -up, side );
 
       if( barrel_time > 2 * PI ) {
-        m_up = float3( 0.0f, 1.0f, 0.0f );
+        m_up = float3( 0.0f, -1.0f, 0.0f );
         m_barrel_rolling = false;
       }
     }

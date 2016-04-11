@@ -35,7 +35,7 @@ namespace kretash {
     for( int i = 0; i < rCOUNT; ++i )
       m_renderers[i] = nullptr;
 
-    m_device_pool_size = ( uint64_t ) 1024 * ( uint64_t ) 512 * ( uint64_t ) 4 * ( uint64_t ) 550;
+    m_device_pool_size = ( uint64_t ) 1024 * ( uint64_t ) 512 * ( uint64_t ) 4 * ( uint64_t ) 512;
     m_host_visible_pool_size = ( uint64_t ) 1024 * ( uint64_t ) 512 * ( uint64_t ) 4 * ( uint64_t ) 64;
 
   }
@@ -178,6 +178,12 @@ namespace kretash {
   }
 
   bool Engine::is_running() {
+
+    if( !m_is_running ){
+      m_texture_manager = nullptr;
+    
+    }
+
     return m_is_running;
   }
 
@@ -256,7 +262,6 @@ namespace kretash {
     m_camera = nullptr;
     m_world = nullptr;
     m_gpu_pool = nullptr;
-    m_texture_manager = nullptr;
     m_sound = nullptr;
     m_input = nullptr;
     m_factory = nullptr;
