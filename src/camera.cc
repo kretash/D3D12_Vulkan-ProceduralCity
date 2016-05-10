@@ -29,7 +29,7 @@ namespace kretash {
 
   void Camera::init() {
     kretash::Window* w = k_engine->get_window();
-    init( w->get_aspect_ratio(), to_rad( 45.0f ), 0.1f, 2000.0f );
+    init( w->get_aspect_ratio(), to_rad( 80.0f ), 0.1f, 2000.0f );
   }
 
   void Camera::init( float aspect_ratio, float fov, float znear, float zfar ) {
@@ -78,22 +78,27 @@ namespace kretash {
 
   void Camera::update() {
     Input* input = k_engine->get_input();
+    m_fov = to_rad( k_engine_settings->get_settings().m_base_fov );
 
-    if( input->has_focus() ) {
-      if( m_cinematic_camera ) {
-        _cinematic_camera();
-      } else {
-        _controlled_camera();
-      }
+    if( m_cinematic_camera ) {
+      _cinematic_camera();
     }
 
-    m_view = float4x4();
-    m_focus = m_eye + m_look_dir;
-    m_view.look_at( m_eye, m_focus, m_up );
+    if( input->has_focus() && !m_cinematic_camera ) {
+      _controlled_camera();
+    }
+
 
     if( input->get_key( key::k_F2 ) ) {
       m_cinematic_camera = !m_cinematic_camera;
     }
+
+    m_view = float4x4( 1.0f );
+    m_focus = m_eye + m_look_dir;
+    m_view.look_at( m_eye, m_focus, m_up );
+
+    m_projection = float4x4( 1.0f );
+    m_projection.prespective( m_fov, m_aspect_ratio, m_znear, m_zfar );
   }
 
   void Camera::_controlled_camera() {
@@ -192,20 +197,21 @@ namespace kretash {
       m_look_dir.normalize();
     }
 
-    m_eye.z += 3.0f +
-      spectrum[7] * 12.0f +
-      spectrum[8] * 12.0f +
-      spectrum[9] * 12.0f +
-      ( cosf( time_elapsed ) + 1.0f );
+    float base_speed = k_engine_settings->get_settings().anim_camera_base_speed;
+    float speed_mult = k_engine_settings->get_settings().anim_camera_music_speed;
 
-    m_eye.x += -3.0f +
-      spectrum[7] * -12.0f +
-      spectrum[8] * -12.0f +
-      spectrum[9] * -12.0f +
-      ( sinf( time_elapsed ) - 1.0f );
+    m_eye.z += base_speed * ( cosf( time_elapsed ) + 1.0f ) +
+      spectrum[7] * speed_mult +
+      spectrum[8] * speed_mult +
+      spectrum[9] * speed_mult;
+
+    m_eye.x += base_speed * ( sinf( time_elapsed ) - 1.0f ) +
+      spectrum[7] * -speed_mult +
+      spectrum[8] * -speed_mult +
+      spectrum[9] * -speed_mult;
 
     m_eye.y = 70.0f +
-      10.0f*sinf( time_elapsed ) +
+      base_speed * 10.0f*sinf( time_elapsed ) +
       spectrum[1] * 10.0f +
       spectrum[2] * 10.0f +
       spectrum[3] * 10.0f;
@@ -226,14 +232,13 @@ namespace kretash {
     m_view.rotate_z( ( sinf( y ) + 1.0f )*0.01f );
 #endif
 
-    float new_fov = m_fov + m_fov*( spectrum[0] * 0.4f );
-    m_projection = float4x4( 1.0f );
-    m_projection.prespective( new_fov, m_aspect_ratio, m_znear, m_zfar );
+    m_fov = m_fov + m_fov*( spectrum[0] * 0.4f );
   }
 
   void Camera::_barrel_roll( std::vector<float>* spectrum ) {
 
     float time_elapsed = k_engine_settings->get_time_elapsed();
+    bool vulkan = k_engine_settings->get_settings().m_api == kVulkan;
 
     {//Start the barrel roll
       const float barrel_roll_delay = 40.0f;
@@ -258,10 +263,18 @@ namespace kretash {
       float up = cosf( barrel_time );
       float side = sinf( barrel_time );
 
-      m_up = float3( -side, -up, side );
+      if( vulkan )
+        m_up = float3( -side, -up, side );
+      else
+        m_up = float3( -side, up, side );
 
       if( barrel_time > 2 * PI ) {
-        m_up = float3( 0.0f, -1.0f, 0.0f );
+
+        if( vulkan )
+          m_up = float3( 0.0f, -1.0f, 0.0f );
+        else
+          m_up = float3( 0.0f, 1.0f, 0.0f );
+
         m_barrel_rolling = false;
       }
     }

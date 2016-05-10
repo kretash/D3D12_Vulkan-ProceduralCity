@@ -75,6 +75,7 @@ namespace kretash {
     World*                          get_world();
     GPU_pool*                       get_GPU_pool();
     TextureManager*                 get_texture_manager();
+    CityGenerator*                  get_city();
     Sound*                          get_sound();
     Input*                          get_input();
     Factory*                        get_factory();
@@ -90,6 +91,7 @@ namespace kretash {
     bool                            has_renderer( render_type t );
     Renderer*                       get_renderer( render_type t );
 
+    std::shared_ptr<TextureManager> m_texture_manager;
   private:
     Engine();
     ~Engine();
@@ -101,7 +103,6 @@ namespace kretash {
     std::shared_ptr<Camera>         m_camera;
     std::shared_ptr<World>          m_world;
     std::shared_ptr<GPU_pool>       m_gpu_pool;
-    std::shared_ptr<TextureManager> m_texture_manager;
     std::shared_ptr<Sound>          m_sound;
     std::shared_ptr<Input>          m_input;
     std::shared_ptr<Interface>      m_interface;

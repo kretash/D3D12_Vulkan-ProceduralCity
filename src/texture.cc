@@ -77,7 +77,7 @@ namespace kretash {
 
   void Texture::new_texture( texture_t t ) {
     //NOTE: change this for different LODs
-    int32_t size = m_width[t] * m_height[t] * m_channels[t];
+    int32_t size = m_width[t] * m_height[t] * 4;//m_channels[t];
 
     if( m_texture_pointer[t] == nullptr )
       m_texture_pointer[t] = new unsigned char[size];

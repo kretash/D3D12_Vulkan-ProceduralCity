@@ -15,14 +15,8 @@ namespace kretash {
 
   void RenderManager::update( float df ) {
 
-    static bool update_RM = true;
+    bool update_RM = k_engine_settings->get_settings().m_update_rm;
     Input* input = k_engine->get_input();
-
-    if( input->get_key( k_F4 ) )
-      update_RM = true;
-
-    if( input->get_key( k_F5 ) )
-      update_RM = false;
 
     if( update_RM ) {
 

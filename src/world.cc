@@ -39,7 +39,7 @@ namespace kretash {
     float time = ( ( m_time / 24.0f ) * 2 * PI ) - ( ( 7.0f / 24.0f ) * 2 * PI );
 
     float sky_color = ( m_time / 24.0f );
-    if( sky_color > 0.5f ) sky_color -= sky_color - 0.5f;
+    if( sky_color > 0.5f ) sky_color = ( 1.0f - sky_color );
     sky_color *= 4.0f;
 
     sky_color = tools::clamp( sky_color, 0.0f, 4.0f );

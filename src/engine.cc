@@ -108,19 +108,25 @@ namespace kretash {
     k_engine_settings->start_frame();
     m_interface->new_frame();
 
-    if( m_renderers[rTEXTURE] != nullptr )  m_texture_manager->update();
+    if( m_renderers[rTEXTURE] != nullptr ){
+      m_texture_manager->update();
+    }
 
     m_gpu_pool->update();
     m_input->update();//0.2-0.6
     m_camera->update();
     m_world->update();
 
-    if( m_input->get_key( key::k_F1 ) ) {
+    if( m_input->get_key( key::k_SPACE ) ) {
       m_input->toggle_focus();
     }
 
     if( m_input->get_key( e_EXIT ) ) {
       m_is_running = false;
+    }
+
+    if( m_renderers[rTEXTURE] != nullptr ) {
+      m_renderers[rTEXTURE]->update();
     }
 
   }
@@ -254,6 +260,7 @@ namespace kretash {
     if( m_renderers[rTEXTURE] != nullptr )  m_texture_manager->regenerate();
 
     m_context->reset_render_command_list( m_window.get() );
+
   }
 
   void Engine::shutdown() {
@@ -281,6 +288,7 @@ namespace kretash {
   Input*          Engine::get_input() { return m_input.get(); }
   Factory*        Engine::get_factory() { return m_factory.get(); }
   Interface*      Engine::get_interface() { return m_interface.get(); }
+  CityGenerator*  Engine::get_city() { return m_city; }
 
   void Engine::set_renderer( Renderer* r ) {
     assert( m_renderers[r->get_renderer_type()] == nullptr && "ONLY ONE RENDERER TYPE ALLOWED" );

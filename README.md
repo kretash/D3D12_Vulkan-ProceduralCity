@@ -13,10 +13,8 @@ Since I started this project in September I thought about porting it to Vulkan. 
 - WASD movement
 - QE height movement
 - Shift speed modifier
-- F1 show/hide interface
+- Space Bar show/hide interface
 - ESC quit
-- F4 halt render manager
-- F5 continue render manager
 
 ### Prerequisites ###
 ---
@@ -33,7 +31,7 @@ Since I started this project in September I thought about porting it to Vulkan. 
 
 ### Bugs ###
 ---
-- Hot swapping from Vulkan to D3D12 is highly unstable
+- Hot swapping from Vulkan to D3D12 is 90% stable
 - Will not run well on low end machines or machines with low VRAM
 
 ### Dependencies ###
