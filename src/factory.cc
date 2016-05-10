@@ -99,31 +99,31 @@ namespace kretash {
     if( m_api == kVulkan ) {
       {
         std::shared_ptr<vkInterface> vk_i = std::make_shared<vkInterface>();
-        ( *m_interface ).swap( static_cast< std::shared_ptr<xxInterface> >( vk_i ) );
+        m_interface->swap( static_cast< std::shared_ptr<xxInterface> >( vk_i ) );
       }
 
       for( int i = 0; i < m_renderers.size(); ++i ) {
 
         std::shared_ptr<vkRenderer> vk_r = std::make_shared<vkRenderer>();
-        ( *m_renderers[i] ).swap( static_cast< std::shared_ptr<xxRenderer> >( vk_r ) );
+        m_renderers[i]->swap( static_cast< std::shared_ptr<xxRenderer> >( vk_r ) );
 
       }
       for( int i = 0; i < m_drawables.size(); ++i ) {
 
         std::shared_ptr<vkDrawable> vk_d = std::make_shared<vkDrawable>();
-        ( *m_drawables[i] ).swap( static_cast< std::shared_ptr<xxDrawable> >( vk_d ) );
+        m_drawables[i]->swap( static_cast< std::shared_ptr<xxDrawable> >( vk_d ) );
 
       }
       for( int i = 0; i < m_descriptors.size(); ++i ) {
 
         std::shared_ptr<vkDescriptorBuffer> vk_db = std::make_shared<vkDescriptorBuffer>();
-        ( *m_descriptors[i] ).swap( static_cast< std::shared_ptr<xxDescriptorBuffer> >( vk_db ) );
+        m_descriptors[i]->swap( static_cast< std::shared_ptr<xxDescriptorBuffer> >( vk_db ) );
 
       }
       for( int i = 0; i < m_textures.size(); ++i ) {
 
         std::shared_ptr<vkTexture> vk_t = std::make_shared<vkTexture>();
-        ( *m_textures[i] ).swap( static_cast< std::shared_ptr<xxTexture> >( vk_t ) );
+        m_textures[i]->swap( static_cast< std::shared_ptr<xxTexture> >( vk_t ) );
 
       }
       //for( int i = 0; i < m_geometries.size(); ++i ) {
@@ -134,36 +134,36 @@ namespace kretash {
       //}
 
       std::shared_ptr<vkContext> vk_c = std::make_shared<vkContext>();
-      ( *m_context ).swap( static_cast< std::shared_ptr<xxContext> >( vk_c ) );
+      m_context->swap( static_cast< std::shared_ptr<xxContext> >( vk_c ) );
 
 
     } else if( m_api == kD3D12 ) {
       {
         std::shared_ptr<dxInterface> dx_i = std::make_shared<dxInterface>();
-        ( *m_interface ).swap( static_cast< std::shared_ptr<xxInterface> >( dx_i ) );
+        m_interface->swap( static_cast< std::shared_ptr<xxInterface> >( dx_i ) );
       }
       for( int i = 0; i < m_renderers.size(); ++i ) {
 
         std::shared_ptr<dxRenderer> dx_r = std::make_shared<dxRenderer>();
-        ( *m_renderers[i] ).swap( static_cast< std::shared_ptr<xxRenderer> >( dx_r ) );
+        m_renderers[i]->swap( static_cast< std::shared_ptr<xxRenderer> >( dx_r ) );
 
       }
       for( int i = 0; i < m_drawables.size(); ++i ) {
 
         std::shared_ptr<dxDrawable> dx_d = std::make_shared<dxDrawable>();
-        ( *m_drawables[i] ).swap( static_cast< std::shared_ptr<xxDrawable> >( dx_d ) );
+        m_drawables[i]->swap( static_cast< std::shared_ptr<xxDrawable> >( dx_d ) );
 
       }
       for( int i = 0; i < m_descriptors.size(); ++i ) {
 
         std::shared_ptr<dxDescriptorBuffer> dx_db = std::make_shared<dxDescriptorBuffer>();
-        ( *m_descriptors[i] ).swap( static_cast< std::shared_ptr<xxDescriptorBuffer> >( dx_db ) );
+        m_descriptors[i]->swap( static_cast< std::shared_ptr<xxDescriptorBuffer> >( dx_db ) );
 
       }
       for( int i = 0; i < m_textures.size(); ++i ) {
 
         std::shared_ptr<dxTexture> dx_t = std::make_shared<dxTexture>();
-        ( *m_textures[i] ).swap( static_cast< std::shared_ptr<xxTexture> >( dx_t ) );
+        m_textures[i]->swap( static_cast< std::shared_ptr<xxTexture> >( dx_t ) );
 
       }
       //for( int i = 0; i < m_geometries.size(); ++i ) {
@@ -174,7 +174,7 @@ namespace kretash {
       //}
 
       std::shared_ptr<dxContext> dx_c = std::make_shared<dxContext>();
-      ( *m_context ).swap( static_cast< std::shared_ptr<xxContext> >( dx_c ) );
+      m_context->swap( static_cast< std::shared_ptr<xxContext> >( dx_c ) );
 
     }
   }

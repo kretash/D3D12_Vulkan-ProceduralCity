@@ -21,7 +21,7 @@
 #define MAX_GENERATED_TEXTURES 16
 #define MAX_UPGRADE_TEXTURES 16
 #define MAX_CLEAR_TEXTURES 32
-#define SWAP_UPLOAD_TEXTURES 3
+#define SWAP_UPLOAD_TEXTURES 8
 
 #define LOD_0_THRESHOLD 150.0f
 #define LOD_1_THRESHOLD 250.0f
@@ -182,6 +182,9 @@ namespace kretash {
     m_placeholder_texture->new_texture( tSPECULAR );
 
     m_texture_generator->generate( m_placeholder_texture.get() );
+    while( !m_texture_generator->texture_ready( m_placeholder_texture.get() ) ){
+      std::this_thread::sleep_for( std::chrono::milliseconds( 2 ) );      
+    }
 
     int32_t base_upload = 0;
     int32_t upload_limit = 0;
@@ -260,7 +263,7 @@ namespace kretash {
 
     m_texture_generator->gather_texture( m_placeholder_texture.get() );
 
-    upload_limit = base_upload;
+    //upload_limit = base_upload;
     upload_limit = 0;
 
     for( int i = base_upload; i < m_textured_drawables.size(); ++i ) {
@@ -276,7 +279,8 @@ namespace kretash {
       }
     }
 
-    base_upload = upload_limit;
+    base_upload += upload_limit;
+    upload_limit = 0;
 
     m_context->compute_texture_upload();
     m_context->wait_for_texture_upload();
@@ -284,6 +288,8 @@ namespace kretash {
 
     while( true ) {
       m_context->reset_texture_command_list();
+      std::vector<Texture*> to_gather;
+
       for( int i = base_upload; i < m_textured_drawables.size(); ++i ) {
 
         Texture* c_t = m_textured_drawables[i]->get_texture();
@@ -301,28 +307,23 @@ namespace kretash {
           c_t->new_texture( tSPECULAR );
 
           m_texture_generator->generate( c_t );
+          to_gather.push_back( c_t );
 
-          if( upload_limit++ - base_upload > SWAP_UPLOAD_TEXTURES ) break;
+          if( upload_limit++ > SWAP_UPLOAD_TEXTURES ) break;
         }
       }
+      
+      for( int i = 0; i < to_gather.size(); ++i ) {
 
-      upload_limit = base_upload;
-
-      for( int i = base_upload; i < m_textured_drawables.size(); ++i ) {
-
-        Texture* c_t = m_textured_drawables[i]->get_texture();
-
-        if( c_t->get_type() == tPROCEDURAL_TEXTURE ) {
+          Texture* c_t = to_gather[i];
           m_texture_generator->gather_texture( c_t );
           m_clean_up_textures.push_back( c_t );
-          if( upload_limit++ - base_upload > SWAP_UPLOAD_TEXTURES ) break;
-        } else {
-
-        }
 
       }
 
-      base_upload = upload_limit;
+      to_gather.clear();
+      base_upload += upload_limit;
+      upload_limit = 0;
 
       m_context->compute_texture_upload();
       m_context->wait_for_texture_upload();

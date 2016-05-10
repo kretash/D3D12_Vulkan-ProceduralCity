@@ -83,7 +83,7 @@ namespace kretash {
 
     m_exit_all_threads.store( false );
 
-    for( int i = 0; i < 6; ++i )
+    for( int i = 0; i < 3; ++i )
       m_threads.push_back( std::thread( &TextureGenerator::_thread_generate, this ) );
   }
 
@@ -126,7 +126,7 @@ namespace kretash {
       int32_t w = desc->get_width( tt );
       int32_t h = desc->get_height( tt );
       int32_t c = desc->get_channels( tt );
-      
+
       if( desc->get_channels( tt ) == 1 ) {
         int8_t* texture = ( int8_t* ) desc->get_texture_pointer( tt );
         int32_t* texture4 = ( int32_t* ) desc->get_texture_pointer( tt );
@@ -162,13 +162,12 @@ namespace kretash {
           m_generate_queue.erase( m_generate_queue.begin() );
           m_queue_mutex.unlock();
 
-#if 1
-          _generate_elements( desc );
-          _rasterize_elements( desc );
-#else
-          //This will be a lot quicker than generating a normal texture
-          _rasterize_debug( desc );
-#endif
+          if( false == k_engine_settings->get_settings().debug_textures ) {
+            _generate_elements( desc );
+            _rasterize_elements( desc );
+          } else {
+            _rasterize_debug( desc );
+          }
 
           desc->m_texture_e.clear();
 

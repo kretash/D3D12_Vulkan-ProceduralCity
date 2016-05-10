@@ -61,8 +61,8 @@ namespace kretash {
 
     m_to_generate.clear();
 
-    m_placeholder_building = nullptr;
-    m_placeholder_building = std::make_shared<Building>( true );
+    //m_placeholder_building = nullptr;
+    //m_placeholder_building = std::make_shared<Building>( true );
     m_placeholder_building->generate_placeholder();
     m_placeholder_building->get_texture()->init_procedural( 0.0f, 0.0f, 0 );
 

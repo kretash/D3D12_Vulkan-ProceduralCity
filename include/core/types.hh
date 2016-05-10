@@ -233,8 +233,13 @@ namespace kretash {
     bool msaa_enabled;
     int32_t msaa_count;
     float upscale_render;
+    float anim_camera_base_speed;
+    float anim_camera_music_speed;
+    float m_base_fov;
+    bool m_update_rm;
     API m_api;
     bool update_city;
+    bool debug_textures;
 
     engine_settings() :
       resolution_width( 0 ),
@@ -245,8 +250,13 @@ namespace kretash {
       sound_file(),
       msaa_enabled( false ),
       update_city( true ),
+      debug_textures( false ),
       msaa_count( 0 ),
       upscale_render( 1.0f ),
+      anim_camera_base_speed( 1.0f ),
+      anim_camera_music_speed( 1.0f ),
+      m_base_fov( 75.0f ),
+      m_update_rm( true ),
       m_api( kVulkan ) {
     }
     ~engine_settings() {}

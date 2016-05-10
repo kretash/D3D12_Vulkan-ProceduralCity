@@ -7,6 +7,8 @@
 #include "core/renderer.hh"
 #include "core/xx/renderer.hh"
 #include "core/engine_settings.hh"
+#include "core/texture_manager.hh"
+#include "core/city_generetaor.hh"
 #include "core/world.hh"
 #include "core/tools.hh"
 #include <fstream>
@@ -17,7 +19,7 @@
 namespace kretash {
 
 #define SHADER_SIZE 8192
-  
+
   Interface::Interface() {
     for( int i = 0; i < SHADERS_COUNT; ++i ) {
       m_text_buffer[i] = new char[SHADER_SIZE];
@@ -142,20 +144,11 @@ namespace kretash {
         _shader_menu();
         _shader_editor();
       }
-
-
-      //bool open = true;
-      //static ExampleAppConsole console;
-      //console.Draw( "Example: Console", &open );
     }
 
-      if( ( m_performance_allways || false == k_engine->get_input()->has_focus()) && m_performance ) {
-        _performance();
-      }
-
-    //bool t = true;
-    //ImGui::ShowTestWindow( &t );
-
+    if( ( m_performance_allways || false == k_engine->get_input()->has_focus() ) && m_performance ) {
+      _performance();
+    }
 
     {
 
@@ -182,7 +175,7 @@ namespace kretash {
       ImGui::Text( "Update Time: %.3f", update_t );
       ImGui::Text( "Render Time: %.3f", render_t );
       ImGui::Separator();
-      ImGui::Text( "Press F1 to show the menu. " );
+      ImGui::Text( "Space Bar -> show the menu. " );
       ImGui::End();
 
     }
@@ -208,6 +201,11 @@ namespace kretash {
         if( ImGui::MenuItem( "Shader Editor", nullptr, &m_shader_editor ) ) {
           m_options = false;
           m_performance = false;
+          for( uint32_t i = 0; i < SHADERS_COUNT; ++i ) {
+            m_shaders_open[i] = false;
+            memset( m_text_buffer[i], 0, SHADER_SIZE );
+            m_shader_files[i] = "";
+          }
         }
         if( ImGui::MenuItem( "Performance Stats", nullptr, &m_performance ) ) {
           m_options = false;
@@ -240,28 +238,35 @@ namespace kretash {
 
       ImGui::Combo( "API", &m_selected_API, " Vulkan \0 D3D12 \0\0" );
 
-      //static int32_t resolution = 1;
-      //ImGui::Combo( "Resolution", &resolution, " 1920x1080 \0 1600x900 \0 1280x720 \0\0" );
-
-      //static bool fullscreen = false;
-      //ImGui::Checkbox( "Fullscreen", &fullscreen );
-
-      //static bool msaa = false;
-      //ImGui::Checkbox( "MSAA", &msaa );
-
-      //static int32_t msaa_samples = 0;
-      //ImGui::SliderInt( "MSAA Samples", &msaa_samples, 0, 8 );
-
       if( ImGui::Button( "Apply" ) ) {
 
         engine_settings* es = k_engine_settings->get_psettings();
         API selected = ( API ) ( m_selected_API + 1 );
 
-          es->m_api = selected;
-          //k_engine_settings->save_settings();
-          k_engine->reload();
-        
+        es->m_api = selected;
+        //k_engine_settings->save_settings();
+        k_engine->reload();
+
+        if( k_engine->get_camera()->get_cinematic_camera() ) {
+
+          CityGenerator* city = k_engine->get_city();
+          TextureManager* tm = k_engine->get_texture_manager();
+          for( int32_t i = 0; i < 50; ++i ) {
+            if( city != nullptr ) city->update();
+            if( tm != nullptr )   tm->update();
+            std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+            if( tm != nullptr )   tm->synch();
+          }
+          std::this_thread::sleep_for( std::chrono::milliseconds( 1000 ) );
+        }
       }
+    }
+    if( ImGui::CollapsingHeader( "Texture" ) ) {
+      ImGui::Checkbox( "Debug Textures", &( k_engine_settings->get_psettings()->debug_textures ) );
+      if( ImGui::Button( "Reload Textures" ) ) {
+        k_engine->get_texture_manager()->regenerate();
+      }
+
     }
 
     if( ImGui::CollapsingHeader( "World" ) ) {
@@ -272,10 +277,16 @@ namespace kretash {
       ImGui::SliderFloat( "Time", w->get_time(), 0.0f, 24.0f );
       ImGui::Checkbox( "Stop time", w->get_stop_time() );
       ImGui::Checkbox( "Update city", &es->update_city );
-      
+
       bool cinematic_camera = k_engine->get_camera()->get_cinematic_camera();
       ImGui::Checkbox( "Cinematic Camera", &cinematic_camera );
       k_engine->get_camera()->set_cinematic_camera( cinematic_camera );
+
+
+      ImGui::Checkbox( "Update RM", &es->m_update_rm );
+      ImGui::SliderFloat( "FOV", &es->m_base_fov, 45.0f, 120.0f );
+      ImGui::SliderFloat( "camera speed", &es->anim_camera_music_speed, 0.0f, 4.0f );
+      ImGui::SliderFloat( "music camera speed", &es->anim_camera_base_speed, 0.0f, 3.0f );
 
     }
 
@@ -297,13 +308,13 @@ namespace kretash {
 
     ImGui::Checkbox( "Always show performance. ", &m_performance_allways );
 
-    ImGui::PlotHistogram( "Delta Time", m_delta_times.data(), ( int ) m_delta_times.size(), 0, nullptr, 
+    ImGui::PlotHistogram( "Delta Time", m_delta_times.data(), ( int ) m_delta_times.size(), 0, nullptr,
       0.0f, 60.0f, ImVec2( 0, 80 ) );
 
-    ImGui::PlotHistogram( "Update Time", m_update_times.data(), ( int ) m_update_times.size(), 0, nullptr, 
+    ImGui::PlotHistogram( "Update Time", m_update_times.data(), ( int ) m_update_times.size(), 0, nullptr,
       0.0f, 60.0f, ImVec2( 0, 80 ) );
 
-    ImGui::PlotHistogram( "Render Time", m_render_times.data(), ( int ) m_render_times.size(), 0, nullptr, 
+    ImGui::PlotHistogram( "Render Time", m_render_times.data(), ( int ) m_render_times.size(), 0, nullptr,
       0.0f, 60.0f, ImVec2( 0, 80 ) );
 
     ImGui::End();

@@ -109,10 +109,9 @@ int main( int argc, char **argv ) {
 #endif
 
       k_engine->update();
-      ren->update();
-#if SKY
+
       sky->update();
-#endif
+
 #if CITY
       c_gen->update();
 #endif
