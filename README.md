@@ -2,6 +2,8 @@
 ----
 ![](assets/demo.gif "")
 
+UPDATE: As you can see this project is old, it was done with the Vulkan SDK 1.0 and the initial drivers. I believe there are issues that have manifested with new drivers.
+
 This is the end of this project. Although there are features I wanted to implement there is no more time. The whole project has been a great learning experience.
 
 The city is rendered with ExecuteIndirect, I store all geometries in a single buffer and have created a system that allows me to reserve and delete geometries from said buffer. All buildings, although similar are a unique instance generated based on a seed. Each building has a set of textures, diffuse, normal and specular generated with the same seed. The texture manger will load textures and decide their LOD. The biggest textures are 1024x510 and the smallest 128x64.
